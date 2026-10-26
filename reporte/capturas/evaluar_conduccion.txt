@@ -1,0 +1,25 @@
+# Evaluación de `ejemplos/conduccion.emo` — dominio `conduccion`
+
+- Fuentes (40): escenarios simulados conduccion (×20), normal (×20)
+- Emparejamiento: detección entre 0 ms antes del inicio etiquetado y 1500 ms después del fin
+
+## Reconocimiento de gestos
+
+| Gesto | VP | FP | FN | Precisión | Recall | F1 | Exactitud | Latencia detección (media) |
+|---|---|---|---|---|---|---|---|---|
+| bostezo | 40 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 1923 ms |
+| cabeceo | 20 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 473 ms |
+| distraccion | 20 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 2172 ms |
+| microsueno | 40 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 967 ms |
+| parpadeo | 447 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 191 ms |
+| **Total** | 567 | 0 | 0 | 100.0% | 100.0% | 100.0% | 100.0% | 448 ms |
+
+Gestos sin verdad de terreno (no evaluados): atento
+
+Exactitud = VP / (VP + FP + FN). La latencia de detección incluye la duración mínima que el propio gesto exige (`durante`).
+
+## Latencia de procesamiento del motor
+
+- Cuadros procesados: 60000
+- Media: 0.045 ms/cuadro · p95: 0.073 ms · máximo: 3.769 ms
+- Presupuesto a 30 fps: 33.3 ms/cuadro (el motor usa 0.14% en promedio, sin contar la extracción de puntos faciales de MediaPipe)

@@ -1,0 +1,30 @@
+// Programa con errores intencionales para demostrar las validaciones.
+dominio pruebas {
+
+    sensor camara { var fps : int = 30; }
+
+    var limite   : proporcion = 1.5;          // umbral fuera de rango (> 100%)
+    var espera   : duracion   = 5;            // int no es duracion: falta unidad
+    var contador : int        = 2.5;          // decimal -> int pierde precisión
+    var ok       : decimal    = 3 + 0.5;      // int + decimal = decimal (válido)
+
+    gesto imposible1 = ear < 0.1 y ear > 0.3 durante 1 s;    // contradictorio
+    gesto imposible2 = mar > 0.5 durante 2 s hasta 1 s;       // min > max
+    gesto fuera      = ear > 1.2 durante 100 ms;              // umbral fuera de rango
+    gesto raro       = pitch > 0.2 durante 3;                 // durante sin unidad
+    gesto bien       = ear < 0.2 durante 1 s;
+
+    maquina m inicial a {
+        estado a {
+            cuando bien ir_a b;
+            cuando bien ir_a c;         // transición contradictoria
+            cuando noexiste ir_a b;     // evento no declarado
+        }
+        estado b {
+            cuando imposible1 ir_a a;
+            al_entrar { ok = "texto"; } // string -> decimal
+        }
+        estado c { cuando bien ir_a a; }
+        estado huerfano { cuando bien ir_a a; }   // inalcanzable
+    }
+}

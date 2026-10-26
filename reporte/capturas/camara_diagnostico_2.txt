@@ -1,0 +1,29 @@
+PS C:\Users\pc\EmoLang> .venv\Scripts\python -m emolang diagnostico
+Diagnóstico de la cámara: 8 pasos de 4 s (más 2 s de calibración).
+Siga las instrucciones de la ventana; un pitido marca cada paso nuevo.
+
+PROMEDIOS POR PASO
+paso              ear       mar   sonrisa     pitch       yaw      roll  simetria
+frente           0.28      0.01      0.00     10.74     -2.94      0.50      1.00
+abajo            0.21      0.01      0.00     18.68     -2.24      0.60      0.99
+arriba           0.29      0.02      0.00     -1.48     -3.48     -0.19      0.99
+izquierda        0.30      0.03      0.03     -2.16     19.59     -4.11      0.91
+derecha          0.37      0.02      0.01     -9.46    -35.53      3.98      0.90
+ojos             0.14      0.01      0.00     -1.78     -4.15      3.43      0.98
+boca             0.19      0.38      0.01      0.07     -3.35      1.39      0.99
+sonrisa          0.22      0.25      0.79      9.45     -1.68      1.15      0.95
+
+VERIFICACIÓN
+  ✗  Baje la CABEZA, barbilla al pecho (no solo los ojos): pitch debe AUMENTAR más de 10 grados (cambió +7.9°)
+  ✓  Suba la CABEZA, mire al techo: pitch debe DISMINUIR más de 10 grados (cambió -12.2°)
+  ✓  Gire la cabeza a SU izquierda (como ver el espejo): yaw debe cambiar más de 15 grados (cambió +22.5°)
+  ✓  Gire la cabeza a SU derecha (como ver el espejo): yaw debe cambiar más de 15 grados (cambió -32.6°)
+  ✓  Cierre los ojos (siga escuchando el pitido): ear debe bajar de 0.20 con los ojos cerrados
+  ✗  Abra la boca grande (como bostezo): mar debe superar 0.50
+  ✓  Sonria ampliamente: sonrisa debe superar 0.40
+  ✓  yaw tiene signo opuesto a la izquierda (+23) y a la derecha (-33)
+
+Velocidad real de la cámara: 10.0 fps (el motor la normaliza al fps del programa)
+
+Cuadros sin rostro: 1/320 (0%)
+2 verificación(es) fallaron: copie este reporte para revisarlo.
