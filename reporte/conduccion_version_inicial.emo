@@ -1,0 +1,85 @@
+// =============================================================
+//  EmoLang - Módulo de transporte: detección de fatiga
+// =============================================================
+dominio conduccion {
+
+    sensor camara {
+        var fps : int = 30;
+    }
+
+    // Umbrales configurables por el supervisor de transporte
+    var umbral_ojo     : proporcion = 0.20;
+    // Valores ajustados con el diagnóstico de cámara (python -m emolang diagnostico)
+    var umbral_bostezo : proporcion = 33%;
+    var umbral_perclos : proporcion = 15%;
+    var cabeceo_grados : decimal    = 10.0;
+    var giro_grados    : decimal    = 20.0;
+    var alertas        : int        = 0;
+
+    // ---------- Gestos: condiciones sostenidas en el tiempo ----------
+    // 'tolerando' perdona interrupciones breves (ruido o cuadros perdidos)
+    // sin reiniciar el conteo de la duración.
+    gesto parpadeo     = ear < umbral_ojo durante 60 ms hasta 400 ms;
+    gesto microsueno   = ear < umbral_ojo durante 1 s;
+    gesto bostezo      = mar > umbral_bostezo durante 1.5 s;
+    gesto cabeceo      = pitch > cabeceo_grados y ear < 0.27 durante 300 ms;
+    gesto distraccion  = yaw > giro_grados o yaw < -giro_grados durante 2 s;
+    gesto atento       = pitch < 10.0 y yaw < 20.0 y yaw > -20.0 durante 3 s;
+
+    // Patrón de fatiga: bostezo seguido de cabeceo en menos de 10 s
+    secuencia fatiga = [bostezo, cabeceo] en 10 s;
+
+    // ---------- Máquina de estados del monitor ----------
+    maquina monitor inicial normal {
+
+        estado normal {
+            var parpadeos : int = 0;
+            al_entrar { detener_alarma(); }
+
+            cuando parpadeo   { parpadeos = parpadeos + 1; }
+            cuando bostezo    { registrar("bostezo detectado"); ir_a somnoliento; }
+            cuando microsueno ir_a alerta;
+            cuando distraccion ir_a distraido;
+            cuando fatiga     ir_a alerta;
+            ignorar atento;                      // estar atento ya es lo normal
+
+            mientras perclos > umbral_perclos {
+                registrar("PERCLOS alto: " + perclos);
+                ir_a somnoliento;
+            }
+        }
+
+        estado somnoliento {
+            al_entrar { mostrar("Conductor somnoliento, vigilando..."); }
+            cuando microsueno ir_a alerta;
+            cuando fatiga     ir_a alerta;
+            cuando distraccion ir_a distraido;   // somnoliento y sin mirar al frente
+            cuando cabeceo    { registrar("cabeceo"); }
+            ignorar bostezo, atento;             // ya se sabe que está somnoliento
+            // solo se relaja cuando pasaron 15 s Y el PERCLOS ya bajó
+            mientras tiempo_en_estado() > 15 s y perclos < umbral_perclos {
+                ir_a normal;
+            }
+        }
+
+        estado distraido {
+            al_entrar { alarma("Mire al frente"); }
+            cuando atento ir_a normal;
+            cuando microsueno ir_a alerta;
+            ignorar bostezo, distraccion, fatiga; // la alarma ya está sonando
+        }
+
+        estado alerta {
+            al_entrar {
+                alertas = alertas + 1;
+                alarma("¡Despierte! Riesgo de microsueño");
+                registrar("alerta #" + alertas);
+                si alertas >= 3 {
+                    registrar("Se recomienda detener el vehículo");
+                }
+            }
+            cuando atento ir_a normal;
+            ignorar bostezo, microsueno, distraccion, fatiga;  // alarma activa hasta estar atento
+        }
+    }
+}

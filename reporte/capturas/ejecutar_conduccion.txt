@@ -1,0 +1,35 @@
+  [   0.00 s] estado     monitor: inicio → normal
+  [   2.97 s] gesto      atento
+  [   6.33 s] registro   PERCLOS alto: 15.2%
+  [   6.33 s] estado     monitor: normal → somnoliento
+  [   6.33 s] mensaje    Conductor somnoliento, vigilando...
+  [   6.93 s] gesto      bostezo
+  [  11.97 s] gesto      microsueno
+  [  11.97 s] estado     monitor: somnoliento → alerta
+  [  11.97 s] ALARMA     ¡Despierte! Riesgo de microsueño
+  [  11.97 s] registro   alerta #1
+  [  18.93 s] gesto      bostezo
+  [  21.97 s] gesto      cabeceo
+  [  21.97 s] secuencia  fatiga
+  [  25.17 s] gesto      atento
+  [  25.17 s] estado     monitor: alerta → normal
+  [  25.20 s] registro   PERCLOS alto: 21.8%
+  [  25.20 s] estado     monitor: normal → somnoliento
+  [  25.20 s] mensaje    Conductor somnoliento, vigilando...
+  [  29.97 s] gesto      microsueno
+  [  29.97 s] estado     monitor: somnoliento → alerta
+  [  29.97 s] ALARMA     ¡Despierte! Riesgo de microsueño
+  [  29.97 s] registro   alerta #2
+  [  36.17 s] gesto      distraccion
+  [  39.30 s] gesto      atento
+  [  39.30 s] estado     monitor: alerta → normal
+  [  39.33 s] registro   PERCLOS alto: 21.2%
+  [  39.33 s] estado     monitor: normal → somnoliento
+  [  39.33 s] mensaje    Conductor somnoliento, vigilando...
+
+RESUMEN DEL MÓDULO DE DOMINIO
+  alarmas_emitidas: 2
+  tiempo_en_alarma_s: 22.53
+  gestos_detectados: {'parpadeo': 9, 'atento': 3, 'bostezo': 2, 'microsueno': 2, 'cabeceo': 1, 'distraccion': 1}
+  eventos_registrados: 5
+  cuadros procesados: 1200  |  latencia de procesamiento: media 0.048 ms, p95 0.066 ms por cuadro

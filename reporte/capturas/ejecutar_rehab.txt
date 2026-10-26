@@ -1,0 +1,61 @@
+  [   0.00 s] estado     ejercicio: inicio → preparacion
+  [   0.00 s] mensaje    Relaje el rostro para comenzar
+  [   0.27 s] gesto      reposo
+  [   0.27 s] estado     ejercicio: preparacion → esperando
+  [   2.63 s] gesto      sonreir
+  [   2.63 s] estado     ejercicio: esperando → contraccion
+  [   2.63 s] mensaje    Repetición 1 de 8 - simetría 90.9%
+  [   3.83 s] gesto      reposo
+  [   3.83 s] estado     ejercicio: contraccion → esperando
+  [   6.63 s] gesto      sonreir
+  [   6.63 s] estado     ejercicio: esperando → contraccion
+  [   6.63 s] mensaje    Repetición 2 de 8 - simetría 91.0%
+  [   7.83 s] gesto      reposo
+  [   7.83 s] estado     ejercicio: contraccion → esperando
+  [  10.67 s] gesto      sonreir
+  [  10.67 s] estado     ejercicio: esperando → contraccion
+  [  10.67 s] mensaje    Repetición 3 de 8 - simetría 80.3%
+  [  11.80 s] gesto      reposo
+  [  11.80 s] estado     ejercicio: contraccion → esperando
+  [  14.63 s] gesto      sonreir
+  [  14.63 s] estado     ejercicio: esperando → contraccion
+  [  14.63 s] mensaje    Repetición 4 de 8 - simetría 94.2%
+  [  15.83 s] gesto      reposo
+  [  15.83 s] estado     ejercicio: contraccion → esperando
+  [  18.67 s] gesto      sonreir
+  [  18.67 s] estado     ejercicio: esperando → contraccion
+  [  18.67 s] mensaje    Repetición 5 de 8 - simetría 87.2%
+  [  19.83 s] gesto      reposo
+  [  19.83 s] estado     ejercicio: contraccion → esperando
+  [  22.67 s] gesto      sonreir
+  [  22.67 s] estado     ejercicio: esperando → contraccion
+  [  22.67 s] mensaje    Repetición 6 de 8 - simetría 71.8%
+  [  22.67 s] registro   simetría baja en repetición 6
+  [  23.80 s] gesto      reposo
+  [  23.80 s] estado     ejercicio: contraccion → esperando
+  [  26.63 s] gesto      sonreir
+  [  26.63 s] estado     ejercicio: esperando → contraccion
+  [  26.63 s] mensaje    Repetición 7 de 8 - simetría 96.9%
+  [  27.83 s] gesto      reposo
+  [  27.83 s] estado     ejercicio: contraccion → esperando
+  [  30.63 s] gesto      sonreir
+  [  30.63 s] estado     ejercicio: esperando → contraccion
+  [  30.63 s] mensaje    Repetición 8 de 8 - simetría 91.1%
+  [  31.83 s] gesto      reposo
+  [  31.83 s] estado     ejercicio: contraccion → terminado
+  [  31.83 s] mensaje    ¡Ejercicio completo!
+  [  31.83 s] registro   fin de sesión
+  [  31.83 s] registro   fin de sesión
+  [  31.83 s] registro   fin de sesión
+  [  34.67 s] gesto      sonreir
+  [  35.83 s] gesto      reposo
+  [  38.63 s] gesto      sonreir
+  [  39.83 s] gesto      reposo
+
+RESUMEN DEL MÓDULO DE DOMINIO
+  repeticiones: 8
+  simetria_promedio_%: 87.9
+  simetria_minima_%: 71.8
+  simetria_maxima_%: 96.9
+  ritmo_promedio_s: 4.0
+  cuadros procesados: 1350  |  latencia de procesamiento: media 0.062 ms, p95 0.039 ms por cuadro

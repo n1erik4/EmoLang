@@ -1,0 +1,38 @@
+TABLA DE SÍMBOLOS
+NOMBRE             CATEGORÍA  TIPO        ÁMBITO                       LÍNEA  VALOR INICIAL
+fps                variable   int         sensor camara                    4  30
+limite             variable   proporcion  dominio pruebas                  6  1.5
+espera             variable   duracion    dominio pruebas                  7  5
+contador           variable   int         dominio pruebas                  8  2.5
+ok                 variable   decimal     dominio pruebas                  9  3.5
+imposible1         gesto      gesto       dominio pruebas                 11  
+imposible2         gesto      gesto       dominio pruebas                 12  
+fuera              gesto      gesto       dominio pruebas                 13  
+raro               gesto      gesto       dominio pruebas                 14  
+bien               gesto      gesto       dominio pruebas                 15  
+m                  maquina    maquina     dominio pruebas                 17  
+a                  estado     estado      maquina m                       18  
+b                  estado     estado      maquina m                       23  
+c                  estado     estado      maquina m                       27  
+huerfano           estado     estado      maquina m                       28  
+
+  [semantico] error en 6:5: umbral fuera de rango: una proporcion debe estar entre 0 y 1 (0% y 100%), se obtuvo 1.5
+  [semantico] error en 7:5: no se puede asignar int a la variable 'espera' de tipo duracion
+  [semantico] error en 8:5: no se puede asignar decimal a la variable 'contador' de tipo int
+  [dominio] error en 11:5: gesto imposible: la condición de 'imposible1' nunca puede cumplirse
+  [dominio] error en 12:5: gesto imposible: 'imposible2' dura al menos 2000 ms pero como máximo 1000 ms
+  [dominio] advertencia en 12:5: 'imposible2' se declara pero ningún 'cuando' ni secuencia lo usa
+  [dominio] error en 13:5: gesto imposible: la condición de 'fuera' nunca puede cumplirse
+  [dominio] advertencia en 13:5: 'fuera' se declara pero ningún 'cuando' ni secuencia lo usa
+  [dominio] error en 13:28: umbral fuera de rango: 'ear' toma valores en [0, 1] y se comparó con 1.2
+  [dominio] advertencia en 14:5: 'raro' se declara pero ningún 'cuando' ni secuencia lo usa
+  [semantico] error en 14:44: 'durante' requiere una duración con unidad (ms o s), se recibió int
+  [dominio] nota en 17:5: en la máquina 'm', el evento 'bien' cambia de estado en a, c, huerfano pero se ignora en b (si es intencional escriba 'ignorar bien;' en esos estados)
+  [dominio] nota en 17:5: en la máquina 'm', el evento 'imposible1' cambia de estado en b pero se ignora en a, c, huerfano (si es intencional escriba 'ignorar imposible1;' en esos estados)
+  [dominio] error en 20:13: transiciones contradictorias en 'a': el evento 'bien' lleva a b, c
+  [semantico] error en 21:13: evento 'noexiste' no declarado
+  [dominio] advertencia en 24:13: la transición 'cuando imposible1' del estado 'b' nunca se dispara: el evento es imposible
+  [semantico] error en 25:25: no se puede asignar string a 'ok' de tipo decimal
+  [dominio] error en 28:9: estado inalcanzable: 'huerfano' no puede alcanzarse desde el estado inicial 'a'
+
+12 error(es), 4 advertencia(s), 2 nota(s)

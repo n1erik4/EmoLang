@@ -1,0 +1,128 @@
+Programa()
+└── dominios: [1]
+    └── Dominio(nombre='rehabilitacion')
+        ├── sensores: [1]
+        │   └── Sensor(nombre='camara')
+        │       └── variables: [1]
+        │           └── DeclVar(nombre='fps', tipo_decl='int')
+        │               └── valor: Literal(valor=30, tipo_lit='int')
+        ├── variables: [5]
+        │   ├── DeclVar(nombre='meta', tipo_decl='int')
+        │   │   └── valor: Literal(valor=8, tipo_lit='int')
+        │   ├── DeclVar(nombre='umbral_sonrisa', tipo_decl='proporcion')
+        │   │   └── valor: Literal(valor=0.4, tipo_lit='proporcion')
+        │   ├── DeclVar(nombre='umbral_reposo', tipo_decl='proporcion')
+        │   │   └── valor: Literal(valor=0.15, tipo_lit='decimal')
+        │   ├── DeclVar(nombre='simetria_minima', tipo_decl='proporcion')
+        │   │   └── valor: Literal(valor=0.8, tipo_lit='proporcion')
+        │   └── DeclVar(nombre='sostener', tipo_decl='duracion')
+        │       └── valor: Literal(valor=500.0, tipo_lit='duracion')
+        ├── gestos: [2]
+        │   ├── Gesto(nombre='sonreir')
+        │   │   ├── condicion: Binaria(op='>')
+        │   │   │   ├── izq: Identificador(nombre='sonrisa')
+        │   │   │   └── der: Identificador(nombre='umbral_sonrisa')
+        │   │   ├── minimo: Identificador(nombre='sostener')
+        │   │   └── tolerancia: Literal(valor=100.0, tipo_lit='duracion')
+        │   └── Gesto(nombre='reposo')
+        │       ├── condicion: Binaria(op='<')
+        │       │   ├── izq: Identificador(nombre='sonrisa')
+        │       │   └── der: Identificador(nombre='umbral_reposo')
+        │       └── minimo: Literal(valor=300.0, tipo_lit='duracion')
+        └── maquinas: [1]
+            └── Maquina(nombre='ejercicio', inicial='preparacion')
+                └── estados: [4]
+                    ├── Estado(nombre='preparacion')
+                    │   ├── al_entrar: Bloque()
+                    │   │   └── sentencias: [1]
+                    │   │       └── SentenciaLlamada()
+                    │   │           └── llamada: Llamada(nombre='mostrar')
+                    │   │               └── args: [1]
+                    │   │                   └── Literal(valor='Relaje el rostro para comenzar', tipo_lit='string')
+                    │   ├── cuandos: [1]
+                    │   │   └── Cuando(evento='reposo', destino='esperando')
+                    │   └── ignorados: [1]
+                    │       └── Identificador(nombre='sonreir')
+                    ├── Estado(nombre='esperando')
+                    │   ├── variables: [1]
+                    │   │   └── DeclVar(nombre='recordado', tipo_decl='bool')
+                    │   │       └── valor: Literal(valor=False, tipo_lit='bool')
+                    │   ├── cuandos: [1]
+                    │   │   └── Cuando(evento='sonreir', destino='contraccion')
+                    │   ├── mientras: [1]
+                    │   │   └── Mientras()
+                    │   │       ├── condicion: Binaria(op='y')
+                    │   │       │   ├── izq: Binaria(op='>')
+                    │   │       │   │   ├── izq: Llamada(nombre='tiempo_en_estado')
+                    │   │       │   │   └── der: Literal(valor=10000.0, tipo_lit='duracion')
+                    │   │       │   └── der: Unaria(op='no')
+                    │   │       │       └── operando: Identificador(nombre='recordado')
+                    │   │       └── cuerpo: Bloque()
+                    │   │           └── sentencias: [2]
+                    │   │               ├── SentenciaLlamada()
+                    │   │               │   └── llamada: Llamada(nombre='mostrar')
+                    │   │               │       └── args: [1]
+                    │   │               │           └── Literal(valor='Recuerde: sonría ampliamente y sostenga', tipo_lit='string')
+                    │   │               └── Asignacion(nombre='recordado')
+                    │   │                   └── valor: Literal(valor=True, tipo_lit='bool')
+                    │   └── ignorados: [1]
+                    │       └── Identificador(nombre='reposo')
+                    ├── Estado(nombre='contraccion')
+                    │   ├── al_entrar: Bloque()
+                    │   │   └── sentencias: [3]
+                    │   │       ├── SentenciaLlamada()
+                    │   │       │   └── llamada: Llamada(nombre='contar_repeticion')
+                    │   │       ├── SentenciaLlamada()
+                    │   │       │   └── llamada: Llamada(nombre='mostrar')
+                    │   │       │       └── args: [6]
+                    │   │       │           ├── Literal(valor='Repetición', tipo_lit='string')
+                    │   │       │           ├── Llamada(nombre='repeticiones')
+                    │   │       │           ├── Literal(valor='de', tipo_lit='string')
+                    │   │       │           ├── Identificador(nombre='meta')
+                    │   │       │           ├── Literal(valor='- simetría', tipo_lit='string')
+                    │   │       │           └── Identificador(nombre='simetria')
+                    │   │       └── Si()
+                    │   │           ├── condicion: Binaria(op='<')
+                    │   │           │   ├── izq: Identificador(nombre='simetria')
+                    │   │           │   └── der: Identificador(nombre='simetria_minima')
+                    │   │           └── entonces: Bloque()
+                    │   │               └── sentencias: [1]
+                    │   │                   └── SentenciaLlamada()
+                    │   │                       └── llamada: Llamada(nombre='registrar')
+                    │   │                           └── args: [1]
+                    │   │                               └── Binaria(op='+')
+                    │   │                                   ├── izq: Literal(valor='simetría baja en repetición ', tipo_lit='string')
+                    │   │                                   └── der: Llamada(nombre='repeticiones')
+                    │   ├── cuandos: [1]
+                    │   │   └── Cuando(evento='reposo')
+                    │   │       └── cuerpo: Bloque()
+                    │   │           └── sentencias: [1]
+                    │   │               └── Si()
+                    │   │                   ├── condicion: Binaria(op='>=')
+                    │   │                   │   ├── izq: Llamada(nombre='repeticiones')
+                    │   │                   │   └── der: Identificador(nombre='meta')
+                    │   │                   ├── entonces: Bloque()
+                    │   │                   │   └── sentencias: [1]
+                    │   │                   │       └── IrA(destino='terminado')
+                    │   │                   └── sino: Bloque()
+                    │   │                       └── sentencias: [1]
+                    │   │                           └── IrA(destino='esperando')
+                    │   └── ignorados: [1]
+                    │       └── Identificador(nombre='sonreir')
+                    └── Estado(nombre='terminado')
+                        └── al_entrar: Bloque()
+                            └── sentencias: [2]
+                                ├── SentenciaLlamada()
+                                │   └── llamada: Llamada(nombre='mostrar')
+                                │       └── args: [1]
+                                │           └── Literal(valor='¡Ejercicio completo!', tipo_lit='string')
+                                └── Repetir()
+                                    ├── veces: Literal(valor=3, tipo_lit='int')
+                                    └── cuerpo: Bloque()
+                                        └── sentencias: [1]
+                                            └── SentenciaLlamada()
+                                                └── llamada: Llamada(nombre='registrar')
+                                                    └── args: [1]
+                                                        └── Literal(valor='fin de sesión', tipo_lit='string')
+
+0 error(es), 0 advertencia(s)

@@ -1,0 +1,25 @@
+TABLA DE SÍMBOLOS
+NOMBRE             CATEGORÍA  TIPO        ÁMBITO                       LÍNEA  VALOR INICIAL
+fps                variable   int         sensor camara                    5  30
+umbral_ojo         variable   proporcion  dominio conduccion               9  0.2
+umbral_bostezo     variable   proporcion  dominio conduccion              11  0.33
+umbral_perclos     variable   proporcion  dominio conduccion              12  0.15
+cabeceo_grados     variable   decimal     dominio conduccion              13  10.0
+giro_grados        variable   decimal     dominio conduccion              14  20.0
+alertas            variable   int         dominio conduccion              15  0
+parpadeo           gesto      gesto       dominio conduccion              20  
+microsueno         gesto      gesto       dominio conduccion              21  
+bostezo            gesto      gesto       dominio conduccion              22  
+cabeceo            gesto      gesto       dominio conduccion              23  
+distraccion        gesto      gesto       dominio conduccion              24  
+atento             gesto      gesto       dominio conduccion              25  
+fatiga             secuencia  secuencia   dominio conduccion              28  
+monitor            maquina    maquina     dominio conduccion              31  
+normal             estado     estado      maquina monitor                 33  
+somnoliento        estado     estado      maquina monitor                 50  
+distraido          estado     estado      maquina monitor                 63  
+alerta             estado     estado      maquina monitor                 70  
+parpadeos          variable   int         estado normal                   34  0
+
+
+0 error(es), 0 advertencia(s)

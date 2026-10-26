@@ -1,0 +1,51 @@
+PS C:\Users\pc\EmoLang> .venv\Scripts\python -m emolang ejecutar ejemplos/conduccion.emo --sensor camara --sonido
+  ▶ [   0.00 s] monitor: ∅ → normal
+  ◆ [   2.97 s] gesto: atento
+  ◆ [  19.77 s] gesto: distraccion
+  ▶ [  19.77 s] monitor: normal → distraido
+  🔔 [  19.77 s] ALARMA: Mire al frente
+  ◆ [  23.27 s] gesto: atento
+  ▶ [  23.27 s] monitor: distraido → normal
+  ◆ [  35.77 s] gesto: bostezo
+  📝 [  35.77 s] bostezo detectado
+  ▶ [  35.77 s] monitor: normal → somnoliento
+  💬 [  35.77 s] Conductor somnoliento, vigilando...
+  ◆ [  39.07 s] gesto: microsueno
+  ▶ [  39.07 s] monitor: somnoliento → alerta
+  🔔 [  39.07 s] ALARMA: ¡Despierte! Riesgo de microsueño
+  📝 [  39.07 s] alerta #1
+  ◆ [  45.27 s] gesto: cabeceo
+  ◆ [  45.27 s] secuencia: fatiga
+  ◆ [  46.97 s] gesto: cabeceo
+  ◆ [  47.27 s] gesto: microsueno
+  ◆ [  49.57 s] gesto: cabeceo
+  ◆ [  53.17 s] gesto: atento
+  ▶ [  53.17 s] monitor: alerta → normal
+  📝 [  53.20 s] PERCLOS alto: 16.468%
+  ▶ [  53.20 s] monitor: normal → somnoliento
+  💬 [  53.20 s] Conductor somnoliento, vigilando...
+  ◆ [  59.77 s] gesto: distraccion
+  ◆ [  60.97 s] gesto: cabeceo
+  📝 [  60.97 s] cabeceo
+  ◆ [  63.37 s] gesto: cabeceo
+  📝 [  63.37 s] cabeceo
+  ▶ [  68.23 s] monitor: somnoliento → normal
+  📝 [  68.27 s] PERCLOS alto: 17.934%
+  ▶ [  68.27 s] monitor: normal → somnoliento
+  💬 [  68.27 s] Conductor somnoliento, vigilando...
+  ◆ [  73.77 s] gesto: atento
+  ◆ [  81.67 s] gesto: microsueno
+  ▶ [  81.67 s] monitor: somnoliento → alerta
+  🔔 [  81.67 s] ALARMA: ¡Despierte! Riesgo de microsueño
+  📝 [  81.67 s] alerta #2
+  ◆ [  87.87 s] gesto: distraccion
+  ◆ [  93.27 s] gesto: atento
+  ▶ [  93.27 s] monitor: alerta → normal
+
+RESUMEN DEL MÓDULO DE DOMINIO
+  alarmas_emitidas: 3
+  tiempo_en_alarma_s: 29.2
+  gestos_detectados: {'atento': 5, 'parpadeo': 12, 'distraccion': 3, 'bostezo': 1, 'microsueno': 3, 'cabeceo': 5}
+  eventos_registrados: 7
+  cuadros procesados: 2799  |  latencia de procesamiento: media 0.100 ms, p95 0.207 ms por cuadro
+PS C:\Users\pc\EmoLang>

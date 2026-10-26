@@ -1,0 +1,40 @@
+test_generacion_y_formatos (tests.test_emolang.TestAutomatas.test_generacion_y_formatos) ... ok
+test_gesto_con_maximo_parpadeo (tests.test_emolang.TestAutomatas.test_gesto_con_maximo_parpadeo) ... ok
+test_gesto_con_maximo_y_tolerancia (tests.test_emolang.TestAutomatas.test_gesto_con_maximo_y_tolerancia) ... ok
+test_gesto_con_tolerancia (tests.test_emolang.TestAutomatas.test_gesto_con_tolerancia) ... ok
+test_gesto_minimo (tests.test_emolang.TestAutomatas.test_gesto_minimo) ... ok
+test_secuencia_kmp (tests.test_emolang.TestAutomatas.test_secuencia_kmp) ... ok
+test_tolerancia_en_el_lenguaje (tests.test_emolang.TestAutomatas.test_tolerancia_en_el_lenguaje) ... ok
+test_errores_lexicos (tests.test_emolang.TestLexico.test_errores_lexicos) ... ok
+test_operadores_dobles_y_comentarios (tests.test_emolang.TestLexico.test_operadores_dobles_y_comentarios) ... ok
+test_palabras_reservadas_e_identificadores (tests.test_emolang.TestLexico.test_palabras_reservadas_e_identificadores) ... ok
+test_posiciones (tests.test_emolang.TestLexico.test_posiciones) ... ok
+test_unidades_pegadas_y_porcentaje (tests.test_emolang.TestLexico.test_unidades_pegadas_y_porcentaje) ... ok
+test_camara_lenta_se_normaliza_al_fps_del_programa (tests.test_emolang.TestMotor.test_camara_lenta_se_normaliza_al_fps_del_programa) ... ok
+test_conduccion_simulada (tests.test_emolang.TestMotor.test_conduccion_simulada) ... ok
+test_escenario_normal_sin_alarmas (tests.test_emolang.TestMotor.test_escenario_normal_sin_alarmas) ... ok
+test_mientras_no_bloquea (tests.test_emolang.TestMotor.test_mientras_no_bloquea) ... ok
+test_rehabilitacion_cuenta_repeticiones (tests.test_emolang.TestMotor.test_rehabilitacion_cuenta_repeticiones) ... ok
+test_transicion_por_gesto_y_variables (tests.test_emolang.TestMotor.test_transicion_por_gesto_y_variables) ... ok
+test_ambitos (tests.test_emolang.TestSemantico.test_ambitos) ... ok
+test_conversiones_validas (tests.test_emolang.TestSemantico.test_conversiones_validas) ... ok
+test_errores_de_tipo (tests.test_emolang.TestSemantico.test_errores_de_tipo) ... ok
+test_metricas_solo_lectura_y_funciones (tests.test_emolang.TestSemantico.test_metricas_solo_lectura_y_funciones) ... ok
+test_redeclaracion_y_reservados (tests.test_emolang.TestSemantico.test_redeclaracion_y_reservados) ... ok
+test_tabla_de_simbolos (tests.test_emolang.TestSemantico.test_tabla_de_simbolos) ... ok
+test_ejemplos_validos (tests.test_emolang.TestSintactico.test_ejemplos_validos) ... ok
+test_literales_de_dominio (tests.test_emolang.TestSintactico.test_literales_de_dominio) ... ok
+test_mientras_fuera_de_estado (tests.test_emolang.TestSintactico.test_mientras_fuera_de_estado) ... ok
+test_precedencia (tests.test_emolang.TestSintactico.test_precedencia) ... ok
+test_recuperacion_reporta_varios_errores (tests.test_emolang.TestSintactico.test_recuperacion_reporta_varios_errores) ... ok
+test_advertencias (tests.test_emolang.TestValidacionesDominio.test_advertencias) ... ok
+test_estados_inalcanzables_y_contradictorios (tests.test_emolang.TestValidacionesDominio.test_estados_inalcanzables_y_contradictorios) ... ok
+test_eventos_ignorados_e_ignorar (tests.test_emolang.TestValidacionesDominio.test_eventos_ignorados_e_ignorar) ... ok
+test_gestos_imposibles (tests.test_emolang.TestValidacionesDominio.test_gestos_imposibles) ... ok
+test_secuencia_imposible_por_ventana (tests.test_emolang.TestValidacionesDominio.test_secuencia_imposible_por_ventana) ... ok
+test_umbral_fuera_de_rango (tests.test_emolang.TestValidacionesDominio.test_umbral_fuera_de_rango) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.295s
+
+OK

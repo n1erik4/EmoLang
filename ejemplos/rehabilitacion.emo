@@ -1,0 +1,62 @@
+// EmoLang. Módulo de salud: rehabilitación facial.
+// Ejercicio: sonrisa sostenida, 8 repeticiones, con medición de
+// simetría (apoyo a seguimiento tipo House-Brackmann).
+dominio rehabilitacion {
+
+    sensor camara {
+        var fps : int = 30;
+    }
+
+    var meta             : int        = 8;
+    var umbral_sonrisa   : proporcion = 40%;
+    var umbral_reposo    : proporcion = 0.15;
+    var simetria_minima  : proporcion = 80%;
+    var sostener         : duracion   = 500 ms;
+
+    gesto sonreir = sonrisa > umbral_sonrisa durante sostener tolerando 100 ms;
+    gesto reposo  = sonrisa < umbral_reposo  durante 300 ms;
+
+    maquina ejercicio inicial preparacion {
+
+        estado preparacion {
+            al_entrar { mostrar("Relaje el rostro para comenzar"); }
+            cuando reposo ir_a esperando;
+            ignorar sonreir;            // primero debe relajar el rostro
+        }
+
+        estado esperando {
+            var recordado : bool = falso;
+            cuando sonreir ir_a contraccion;
+            ignorar reposo;             // ya está en reposo
+            mientras tiempo_en_estado() > 10 s y no recordado {
+                mostrar("Recuerde: sonría ampliamente y sostenga");
+                recordado = verdadero;
+            }
+        }
+
+        estado contraccion {
+            ignorar sonreir;            // la sonrisa sostenida ya se contó
+            al_entrar {
+                contar_repeticion();
+                mostrar("Repetición", repeticiones(), "de", meta, "- simetría", simetria);
+                si simetria < simetria_minima {
+                    registrar("simetría baja en repetición " + repeticiones());
+                }
+            }
+            cuando reposo {
+                si repeticiones() >= meta {
+                    ir_a terminado;
+                } sino {
+                    ir_a esperando;
+                }
+            }
+        }
+
+        estado terminado {
+            al_entrar {
+                mostrar("¡Ejercicio completo!");
+                repetir 3 veces { registrar("fin de sesión"); }
+            }
+        }
+    }
+}
