@@ -4,6 +4,7 @@
 dominio rehabilitacion {
 
     sensor camara {
+        usar sonrisa, simetria;
         var fps : int = 30;
     }
 

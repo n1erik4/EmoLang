@@ -6,7 +6,7 @@ Proyecto Integrador · Lenguajes y Autómatas II · Instituto Tecnológico de Oa
 
 ```emo
 dominio conduccion {
-    sensor camara { var fps : int = 30; }
+    sensor camara { usar ear, mar, pitch; var fps : int = 30; }
     var umbral_ojo : proporcion = 0.20;
 
     gesto parpadeo   = ear < umbral_ojo durante 60 ms hasta 400 ms;
@@ -39,12 +39,16 @@ emolang/
   tipos.py         reglas de tipos y conversiones
   validaciones.py  validaciones de dominio (análisis de intervalos, BFS) → objetivo 4
   automatas.py     generador de AFD: tablas, Graphviz (DOT), Mermaid, JSON → objetivo 5
-  motor.py         motor de ejecución que evalúa las tablas cuadro por cuadro → objetivo 6
+  intermedio.py    código intermedio: cuádruplas con pila semántica
+  optimizador.py   seis técnicas de optimización sobre las cuádruplas
+  emoc.py          formato del programa compilado (.emoc)
+  vm.py            EmoVM: ejecuta el .emoc cuadro por cuadro              → objetivo 6
+  motor.py         intérprete directo del AST, referencia para las pruebas de equivalencia
   camara.py        sensor de cámara con MediaPipe Face Landmarker   → objetivo 6
   sensores.py      sensor simulado (con verdad de terreno) y CSV
   modulos.py       módulos de conducción y rehabilitación           → objetivo 7
   evaluacion.py    exactitud, falsos positivos/negativos, latencia  → objetivo 8
-ejemplos/          conduccion.emo, rehabilitacion.emo, errores.emo
+ejemplos/          conduccion.emo, rehabilitacion.emo, terapia_facial.emo, errores.emo
 docs/gramatica.md  gramática EBNF, tipos, ámbitos, semántica           → objetivo 1
   captura.py       grabación con cámara + etiquetado manual (verdad de terreno)
 tests/             pruebas unitarias de todas las fases
@@ -59,17 +63,20 @@ El compilador y el sensor simulado no tienen dependencias (Python ≥ 3.10).
 python -m emolang lexico     ejemplos/conduccion.emo   # tabla de tokens
 python -m emolang sintactico ejemplos/conduccion.emo   # árbol de sintaxis abstracta
 python -m emolang semantico  ejemplos/errores.emo      # tabla de símbolos + errores
-python -m emolang compilar   ejemplos/conduccion.emo   # autómatas → salida/conduccion/
+python -m emolang cuadruplas ejemplos/conduccion.emo   # cuádruplas y optimización
+python -m emolang compilar   ejemplos/conduccion.emo   # .emoc y autómatas → salida/conduccion/
 
 python -m emolang ejecutar ejemplos/conduccion.emo      # sensor simulado
+python -m emolang ejecutar salida/conduccion/conduccion.emoc   # ya compilado
 python -m emolang ejecutar ejemplos/rehabilitacion.emo --bitacora eventos.csv
+python -m emolang ejecutar ejemplos/terapia_facial.emo --bitacora sesion.csv   # sonrisa, cejas y ojos
 python -m emolang evaluar  ejemplos/conduccion.emo -o evaluacion/resultados.md
 python -m emolang evaluar  ejemplos/conduccion.emo --ruido 3 --repeticiones 20   # robustez
 
 python -m unittest discover -s tests -t .
 ```
 
-`compilar` genera `salida/<programa>/automatas.md` (tablas de transiciones y diagramas Mermaid, se ven directamente en GitHub/VS Code), `programa.json` y un `.dot` por autómata (`dot -Tpng archivo.dot -o archivo.png` si tienen Graphviz).
+`compilar` genera `salida/<programa>/<programa>.emoc` (lo que ejecuta EmoVM), `automatas.md` (tablas de transiciones y diagramas Mermaid, se ven directamente en GitHub/VS Code), `programa.json` y un `.dot` por autómata (`dot -Tpng archivo.dot -o archivo.png` si tienen Graphviz).
 
 ### Con cámara (MediaPipe)
 

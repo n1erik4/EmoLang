@@ -1,0 +1,103 @@
+// EmoLang. Módulo de salud: rutina de terapia facial.
+// Tres ejercicios, uno por región del rostro: boca, frente y ojos.
+// Cada repetición registra la simetría izquierda/derecha de su propio ejercicio.
+// Es un apoyo para dar seguimiento; no es un diagnóstico.
+dominio terapia_facial {
+
+    sensor camara {
+        usar sonrisa, cejas, ear, simetria_sonrisa, simetria_cejas, simetria_ojos;
+        var fps : int = 30;
+    }
+
+    // Los configura la persona terapeuta según las capacidades del paciente.
+    var meta            : int        = 5;
+    var umbral_sonrisa  : proporcion = 40%;
+    var umbral_cejas    : proporcion = 50%;
+    var umbral_ojos     : proporcion = 0.15;
+    var simetria_minima : proporcion = 80%;
+    var hechas          : int        = 0;
+
+    gesto sonreir      = sonrisa > umbral_sonrisa durante 500 ms tolerando 100 ms;
+    gesto elevar_cejas = cejas > umbral_cejas     durante 500 ms tolerando 100 ms;
+    gesto cerrar_ojos  = ear < umbral_ojos        durante 800 ms tolerando 100 ms;
+    gesto reposo       = sonrisa < 15% y cejas < 35% y ear > 0.20 durante 300 ms;
+
+    maquina rutina inicial preparacion {
+
+        estado preparacion {
+            al_entrar { mostrar("Relaje el rostro para comenzar"); }
+            cuando reposo ir_a sonrisa_espera;
+            ignorar sonreir, elevar_cejas, cerrar_ojos;
+        }
+
+        // Ejercicio 1: sonrisa sostenida
+        estado sonrisa_espera {
+            al_entrar { mostrar("Sonría y sostenga"); }
+            cuando sonreir ir_a sonrisa_hecha;
+            ignorar elevar_cejas, cerrar_ojos, reposo;
+        }
+        estado sonrisa_hecha {
+            al_entrar {
+                contar_ejercicio("sonrisa", simetria_sonrisa);
+                hechas = hechas + 1;
+                mostrar("Sonrisa", hechas, "de", meta, "- simetría", simetria_sonrisa);
+                si simetria_sonrisa < simetria_minima {
+                    registrar("sonrisa asimétrica en la repetición " + hechas);
+                }
+            }
+            cuando reposo {
+                si hechas >= meta { hechas = 0; ir_a cejas_espera; }
+                sino { ir_a sonrisa_espera; }
+            }
+            ignorar sonreir, elevar_cejas, cerrar_ojos;
+        }
+
+        // Ejercicio 2: elevar las cejas
+        estado cejas_espera {
+            al_entrar { mostrar("Eleve las cejas y sostenga"); }
+            cuando elevar_cejas ir_a cejas_hecha;
+            ignorar sonreir, cerrar_ojos, reposo;
+        }
+        estado cejas_hecha {
+            al_entrar {
+                contar_ejercicio("cejas", simetria_cejas);
+                hechas = hechas + 1;
+                mostrar("Cejas", hechas, "de", meta, "- simetría", simetria_cejas);
+                si simetria_cejas < simetria_minima {
+                    registrar("cejas asimétricas en la repetición " + hechas);
+                }
+            }
+            cuando reposo {
+                si hechas >= meta { hechas = 0; ir_a ojos_espera; }
+                sino { ir_a cejas_espera; }
+            }
+            ignorar sonreir, elevar_cejas, cerrar_ojos;
+        }
+
+        // Ejercicio 3: cerrar los ojos con suavidad
+        estado ojos_espera {
+            al_entrar { mostrar("Cierre los ojos y sostenga"); }
+            cuando cerrar_ojos ir_a ojos_hecha;
+            ignorar sonreir, elevar_cejas, reposo;
+        }
+        estado ojos_hecha {
+            al_entrar {
+                contar_ejercicio("ojos", simetria_ojos);
+                hechas = hechas + 1;
+                mostrar("Ojos", hechas, "de", meta, "- simetría", simetria_ojos);
+                si simetria_ojos < simetria_minima {
+                    registrar("cierre de ojos asimétrico en la repetición " + hechas);
+                }
+            }
+            cuando reposo {
+                si hechas >= meta { ir_a terminado; }
+                sino { ir_a ojos_espera; }
+            }
+            ignorar sonreir, elevar_cejas, cerrar_ojos;
+        }
+
+        estado terminado {
+            al_entrar { mostrar("¡Rutina completa!"); }
+        }
+    }
+}

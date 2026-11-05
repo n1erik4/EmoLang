@@ -10,6 +10,7 @@ Métricas calculadas por cuadro:
   pitch, yaw, roll        pose de la cabeza (grados) desde la matriz de transformación,
                           relativa a la postura neutra medida en la calibración
   simetria                comparación izquierda/derecha de sonrisa y apertura ocular
+  simetria_sonrisa/cejas/ojos  comparación izquierda/derecha de un solo ejercicio
 """
 
 import math
@@ -18,7 +19,7 @@ import time
 import urllib.request
 
 from .metricas import metricas_neutras
-from .sensores import simetria
+from .sensores import simetria, simetria_par
 
 URL_MODELO = ("https://storage.googleapis.com/mediapipe-models/face_landmarker/"
               "face_landmarker/float16/latest/face_landmarker.task")
@@ -147,6 +148,11 @@ class SensorCamara:
             m["sonrisa"] = (m["sonrisa_izq"] + m["sonrisa_der"]) / 2
             m["cejas"] = min(1.0, (bs.get("browInnerUp", 0.0) + bs.get("browOuterUpLeft", 0.0)
                                    + bs.get("browOuterUpRight", 0.0)) / 3 * 1.5)
+            m["cejas_izq"] = bs.get("browOuterUpLeft", 0.0)
+            m["cejas_der"] = bs.get("browOuterUpRight", 0.0)
+            m["simetria_sonrisa"] = simetria_par(m["sonrisa_izq"], m["sonrisa_der"])
+            m["simetria_cejas"] = simetria_par(m["cejas_izq"], m["cejas_der"])
+            m["simetria_ojos"] = simetria_par(bs.get("eyeBlinkLeft", 0.0), bs.get("eyeBlinkRight", 0.0))
         if resultado.facial_transformation_matrixes:
             pose = _euler(resultado.facial_transformation_matrixes[0])
             m["pitch"], m["yaw"], m["roll"] = (max(-90.0, min(90.0, v - b))
@@ -253,7 +259,7 @@ class SensorCamara:
             if self.motor:
                 for maq, est in self.motor.estado_actual().items():
                     lineas.append(f"{maq}: {est}")
-                activos = [g.nodo.nombre for g in self.motor.gestos if g.activo]
+                activos = self.motor.gestos_activos()
                 lineas.append("condiciones: " + (", ".join(activos) or "-"))
                 if self.motor.modulo.reps:
                     lineas.append(f"repeticiones: {len(self.motor.modulo.reps)}")

@@ -24,8 +24,10 @@ PASOS = [
      "mar debe superar 0.30"),
     ("Sonria ampliamente", "sonrisa", lambda p, b: p["sonrisa"] > 0.4,
      "sonrisa debe superar 0.40"),
+    ("Eleve las cejas lo más que pueda", "cejas", lambda p, b: p["cejas"] > 0.5,
+     "cejas debe superar 0.50"),
 ]
-METRICAS = ["ear", "mar", "sonrisa", "pitch", "yaw", "roll", "simetria"]
+METRICAS = ["ear", "mar", "sonrisa", "cejas", "pitch", "yaw", "roll", "simetria"]
 
 
 def diagnosticar(indice=0, salida=print):

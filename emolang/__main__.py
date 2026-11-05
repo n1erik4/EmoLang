@@ -3,8 +3,12 @@
     python -m emolang lexico      programa.emo
     python -m emolang sintactico  programa.emo
     python -m emolang semantico   programa.emo
+    python -m emolang cuadruplas  programa.emo [--sin-optimizar]
+    python -m emolang direcciones programa.emo [--sin-optimizar]
+    python -m emolang notacion    "a + 0.5 * b" [--de infija|postfija|prefija]
     python -m emolang compilar    programa.emo [-o salida]
-    python -m emolang ejecutar    programa.emo [--sensor simulado|csv|camara] ...
+    python -m emolang correr      programa.emo|programa.emoc      (ejecuta 'funcion principal')
+    python -m emolang ejecutar    programa.emo|programa.emoc [--sensor simulado|csv|camara] ...
     python -m emolang evaluar     programa.emo [--escenario conduccion] ...
 """
 
@@ -15,7 +19,10 @@ import sys
 import time
 
 from . import automatas as A
-from .compilador import compilar_archivo
+from . import emoc as E
+from .compilador import Resultado, compilar_archivo
+from .errores import Reporte
+from .intermedio import resolver
 from .errores import ErrorEmoLang
 from .nodos import arbol_texto
 
@@ -65,6 +72,64 @@ def cmd_semantico(args):
     return 0 if r.ok else 1
 
 
+def _imprimir_bloque(nombre, cuadruplas):
+    filas = resolver(cuadruplas)
+    print(f"\nBLOQUE {nombre}  ({len(filas)} cuádruplas)")
+    print(f"{'#':>4}  {'OPERADOR':<9} {'ARG1':<30} {'ARG2':<12} RESULTADO")
+    for i, c in enumerate(filas, 1):
+        op, a1, a2, res = c.fila()
+        print(f"{i:>4}  {op:<9} {a1:<30} {a2:<12} {res}")
+
+
+def cmd_cuadruplas(args):
+    r = _compilar_o_salir(args.archivo)
+    programas = r.cuadruplas if args.sin_optimizar else r.optimizado
+    for dominio, prog in programas.items():
+        print(f"DOMINIO {dominio} ({'sin optimizar' if args.sin_optimizar else 'optimizado'})")
+        for nombre, cuads in prog.bloques.items():
+            _imprimir_bloque(nombre, cuads)
+        if not args.sin_optimizar:
+            inf = r.informes[dominio]
+            a, d = sum(inf.antes.values()), sum(inf.despues.values())
+            print(f"\nOPTIMIZACIÓN: de {a} a {d} cuádruplas")
+            for tecnica, n in inf.aplicaciones.most_common():
+                print(f"  {tecnica}: {n}")
+    return 0
+
+
+def cmd_direcciones(args):
+    from .direcciones import construir
+    r = _compilar_o_salir(args.archivo)
+    for dominio, prog in (r.cuadruplas if args.sin_optimizar else r.optimizado).items():
+        tabla = construir(prog)
+        print(f"DOMINIO {dominio}\n\nSEGMENTO DE DATOS")
+        fila = "{:<34} {:<11} {:<10} {:<14} {:>5}"
+        print(fila.format("NOMBRE", "CATEGORÍA", "TIPO", "DIRECCIÓN", "BYTES"))
+        for e in tabla.datos:
+            print(fila.format(e.nombre, e.categoria, e.tipo, e.direccion, e.bytes))
+        print("\nLITERALES")
+        for e in tabla.literales:
+            print(fila.format(e.nombre, e.categoria, e.tipo, e.direccion, e.bytes))
+        for marco in tabla.marcos.values():
+            if marco.entradas:
+                print(f"\nMARCO DE PILA {marco.bloque}  ({marco.bytes} bytes)")
+                for e in marco.entradas:
+                    print(fila.format(e.nombre, e.categoria, e.tipo, e.direccion, e.bytes))
+        print()
+    return 0
+
+
+def cmd_notacion(args):
+    from .notaciones import ErrorNotacion, convertir
+    try:
+        for nombre, texto in convertir(args.expresion, args.de).items():
+            print(f"{nombre:<9} {texto}")
+    except ErrorNotacion as e:
+        print(f"Error: {e}")
+        return 1
+    return 0
+
+
 def _compilar_o_salir(ruta):
     r = compilar_archivo(ruta)
     if not r.ok:
@@ -100,10 +165,12 @@ def cmd_compilar(args):
         f.write("\n".join(md))
     with open(os.path.join(salida, "programa.json"), "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
+    E.guardar(r.emoc, os.path.join(salida, base + ".emoc"))
     print()
     _imprimir_diagnosticos(r.reporte)
     print(f"\nArchivos generados en: {os.path.abspath(salida)}")
-    print("  automatas.md (tablas + diagramas Mermaid), programa.json, *.dot (Graphviz)")
+    print(f"  {base}.emoc (programa para EmoVM), automatas.md (tablas + diagramas Mermaid), "
+          "programa.json, *.dot (Graphviz)")
     return 0
 
 
@@ -136,6 +203,12 @@ def _descripcion_md(a):
     return "- `λ` = transición espontánea (al_entrar / mientras); `[...]` = guarda\n"
 
 
+def _escenario_de(dominio):
+    if "terapia" in dominio:
+        return "terapia"
+    return "rehabilitacion" if "rehab" in dominio else "conduccion"
+
+
 def _crear_sensor(args, fps):
     from . import sensores
     if args.sensor == "simulado":
@@ -152,14 +225,17 @@ def _crear_sensor(args, fps):
 
 def cmd_ejecutar(args):
     from .ejecucion import ejecutar
-    r = _compilar_o_salir(args.archivo)
+    if args.archivo.endswith(".emoc"):
+        r = Resultado("", emoc=E.cargar(args.archivo), reporte=Reporte())
+    else:
+        r = _compilar_o_salir(args.archivo)
     if r.reporte.advertencias and not args.silencioso:
         _imprimir_diagnosticos(r.reporte, notas=False)
         print()
-    dominio = args.dominio or next(iter(r.analisis.dominios))
-    fps = r.analisis.dominios[dominio].fps
+    dominio = args.dominio or next(iter(r.emoc["dominios"]))
+    fps = r.emoc["dominios"][dominio]["fps"]
     if args.sensor == "simulado" and not args.escenario:
-        args.escenario = "rehabilitacion" if "rehab" in dominio else "conduccion"
+        args.escenario = _escenario_de(dominio)
     sensor = _crear_sensor(args, fps)
     try:
         res = ejecutar(r, dominio, sensor, tiempo_real=args.tiempo_real, sonido=args.sonido,
@@ -178,6 +254,22 @@ def cmd_ejecutar(args):
     return 0
 
 
+def cmd_correr(args):
+    from .intermedio import PROGRAMA
+    from .modulos import ModuloPrograma
+    from .vm import EmoVM
+    emoc = E.cargar(args.archivo) if args.archivo.endswith(".emoc") else _compilar_o_salir(args.archivo).emoc
+    if PROGRAMA not in emoc["dominios"]:
+        print("El programa no tiene 'funcion principal'.")
+        return 1
+    try:
+        valor = EmoVM(emoc, PROGRAMA, ModuloPrograma(salida=print)).ejecutar_principal()
+    except ErrorEmoLang as e:
+        print(f"Error en tiempo de ejecución: {e}")
+        return 1
+    return valor if isinstance(valor, int) else 0
+
+
 def cmd_evaluar(args):
     from .evaluacion import evaluar, fuentes_csv, fuentes_simuladas, reporte_markdown
     r = _compilar_o_salir(args.archivo)
@@ -187,7 +279,8 @@ def cmd_evaluar(args):
         fuentes = fuentes_csv(args.csv, fps)
         anticipo = 500 if args.anticipo is None else args.anticipo
     else:
-        escenarios = args.escenario or (["rehabilitacion"] if "rehab" in dominio else ["conduccion", "normal"])
+        predeterminado = _escenario_de(dominio)
+        escenarios = args.escenario or ([predeterminado] if predeterminado != "conduccion" else ["conduccion", "normal"])
         fuentes = fuentes_simuladas(escenarios, fps, range(args.repeticiones), args.ruido)
         anticipo = args.anticipo or 0
     try:
@@ -245,14 +338,29 @@ def main(argv=None):
         sp = sub.add_parser(nombre, help=ayuda)
         sp.add_argument("archivo")
 
-    sp = sub.add_parser("compilar", help="genera los autómatas (tablas y diagramas)")
+    sp = sub.add_parser("cuadruplas", help="muestra las cuádruplas y lo que hizo el optimizador")
+    sp.add_argument("archivo")
+    sp.add_argument("--sin-optimizar", action="store_true")
+
+    sp = sub.add_parser("direcciones", help="muestra la tabla de direcciones")
+    sp.add_argument("archivo")
+    sp.add_argument("--sin-optimizar", action="store_true")
+
+    sp = sub.add_parser("notacion", help="convierte una expresión entre infija, postfija y prefija")
+    sp.add_argument("expresion")
+    sp.add_argument("--de", choices=["infija", "postfija", "prefija"], default="infija")
+
+    sp = sub.add_parser("compilar", help="genera el .emoc y los autómatas (tablas y diagramas)")
     sp.add_argument("archivo")
     sp.add_argument("-o", "--salida")
+
+    sp = sub.add_parser("correr", help="ejecuta 'funcion principal' en EmoVM")
+    sp.add_argument("archivo")
 
     sp = sub.add_parser("ejecutar", help="ejecuta el programa sobre un sensor")
     sp.add_argument("archivo")
     sp.add_argument("--sensor", choices=["simulado", "csv", "camara"], default="simulado")
-    sp.add_argument("--escenario", help="conduccion | normal | rehabilitacion (sensor simulado)")
+    sp.add_argument("--escenario", help="conduccion | normal | rehabilitacion | terapia (sensor simulado)")
     sp.add_argument("--csv", help="archivo de métricas para --sensor csv")
     sp.add_argument("--camara", type=int, default=0, help="índice de la cámara")
     sp.add_argument("--dominio")
@@ -294,7 +402,7 @@ def main(argv=None):
 
     args = p.parse_args(argv)
     return {"lexico": cmd_lexico, "sintactico": cmd_sintactico, "semantico": cmd_semantico,
-            "compilar": cmd_compilar, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
+            "cuadruplas": cmd_cuadruplas, "direcciones": cmd_direcciones, "notacion": cmd_notacion, "compilar": cmd_compilar, "correr": cmd_correr, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
             "capturar": cmd_capturar, "diagnostico": cmd_diagnostico, "grabar": cmd_grabar}[args.comando](args)
 
 

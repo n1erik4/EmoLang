@@ -38,6 +38,15 @@ ESCENARIOS = {
         "eventos": [("sonrisa", 2.0 + 4.0 * i, 1.6, {"asimetria": a})
                     for i, a in enumerate([0.05, 0.10, 0.30, 0.08, 0.15, 0.40, 0.05, 0.12, 0.20, 0.06])],
     },
+    "terapia": {
+        "duracion": 70.0,
+        "eventos": ([("sonrisa", 2.0 + 4.0 * i, 1.6, {"asimetria": a})
+                     for i, a in enumerate([0.05, 0.10, 0.35, 0.08, 0.12])]
+                    + [("cejas", 24.0 + 4.0 * i, 1.6, {"asimetria": a})
+                       for i, a in enumerate([0.06, 0.40, 0.10, 0.05, 0.09])]
+                    + [("ojos", 46.0 + 4.0 * i, 2.0, {"asimetria": a})
+                       for i, a in enumerate([0.04, 0.08, 0.05, 0.45, 0.07])]),
+    },
 }
 
 
@@ -50,6 +59,7 @@ class SensorSimulado:
         self.fps = fps
         self.duracion = duracion or esc["duracion"]
         self.rng = random.Random(semilla)
+        self.rng_lados = random.Random(semilla + 1)
         self.ruido = ruido
         self.eventos = [e for e in esc["eventos"] if e[1] < self.duracion]
         self.verdad = [(tipo, ini * 1000, (ini + dur) * 1000) for tipo, ini, dur, _ in self.eventos]
@@ -60,7 +70,7 @@ class SensorSimulado:
     def _programar_parpadeos(self):
         res, t = [], 1.5
         ocupado = [(ini - 0.5, ini + dur + 0.5) for tipo, ini, dur, _ in self.eventos
-                   if tipo in ("microsueno", "bostezo", "cabeceo")]
+                   if tipo in ("microsueno", "bostezo", "cabeceo", "ojos")]
         while t < self.duracion - 1:
             dur = self.rng.uniform(0.10, 0.25)
             if not any(a <= t <= b for a, b in ocupado):
@@ -79,6 +89,8 @@ class SensorSimulado:
         m = metricas_neutras()
         ts = t_ms / 1000
         rn = lambda s=1.0: self.rng.gauss(0, self.ruido * s)
+        cejas_izq = cejas_der = None
+        cierre_izq = cierre_der = 0.0
 
         for a, b in self._parpadeos:
             if a <= t_ms < b:
@@ -107,6 +119,13 @@ class SensorSimulado:
                 m["sonrisa_der"] = nivel * (1 - asim)
                 m["sonrisa"] = (m["sonrisa_izq"] + m["sonrisa_der"]) / 2
                 m["ear"] = 0.30 - 0.12 * campana   # medido: ~0.18 al sonreir
+            elif tipo == "cejas":
+                nivel = 0.2 + 0.55 * min(1.0, 1.8 * campana)
+                cejas_izq, cejas_der = nivel, nivel * (1 - p.get("asimetria", 0.0))
+                m["cejas"] = (cejas_izq + cejas_der) / 2
+            elif tipo == "ojos":
+                m["ear"] = 0.06
+                cierre_izq, cierre_der = 0.9, 0.9 * (1 - p.get("asimetria", 0.0))
 
         # ruido de medición
         for k in ("ear", "mar", "sonrisa_izq", "sonrisa_der", "cejas"):
@@ -118,6 +137,12 @@ class SensorSimulado:
         m["ear_izq"] = _limitar(m["ear"] + rn(0.5))
         m["ear_der"] = _limitar(m["ear"] + rn(0.5))
         m["simetria"] = simetria(m["sonrisa_izq"], m["sonrisa_der"], m["ear_izq"], m["ear_der"])
+        lado = lambda: self.rng_lados.gauss(0, self.ruido)
+        m["cejas_izq"] = _limitar((m["cejas"] if cejas_izq is None else cejas_izq) + lado())
+        m["cejas_der"] = _limitar((m["cejas"] if cejas_der is None else cejas_der) + lado())
+        m["simetria_sonrisa"] = simetria_par(m["sonrisa_izq"], m["sonrisa_der"])
+        m["simetria_cejas"] = simetria_par(m["cejas_izq"], m["cejas_der"])
+        m["simetria_ojos"] = simetria_par(_limitar(cierre_izq + lado()), _limitar(cierre_der + lado()))
         return m
 
 
@@ -182,6 +207,12 @@ def grabar_csv(sensor, ruta):
             activas = sorted({tipo for tipo, a, b in verdad if a <= t < b})
             w.writerow([f"{t:.1f}"] + [(int(m[n]) if isinstance(m[n], bool) else f"{m[n]:.4f}")
                                        for n in nombres] + [";".join(activas)])
+
+
+def simetria_par(izq, der, minimo=0.15):
+    """1 = ambos lados iguales. Si apenas hay movimiento, no se puede medir y se reporta 1."""
+    mx = max(izq, der)
+    return _limitar(1 - abs(izq - der) / mx) if mx > minimo else 1.0
 
 
 def simetria(sonrisa_izq, sonrisa_der, ear_izq, ear_der):
