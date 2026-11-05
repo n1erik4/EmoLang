@@ -17,6 +17,8 @@ TECLAS = {
     "c": "cabeceo",
     "d": "distraccion",
     "s": "sonrisa",
+    "e": "cejas",
+    "o": "ojos",
 }
 COLUMNAS = [n for n in METRICAS if n != "perclos"]   # perclos lo calcula el motor
 

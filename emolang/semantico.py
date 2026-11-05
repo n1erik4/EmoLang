@@ -13,7 +13,9 @@ from dataclasses import dataclass, field
 from . import nodos as N
 from .errores import Reporte
 from .metricas import METRICAS
-from .tipos import asignable, tipo_binario, tipo_unario, es_numerico
+from .modulos import clase_dominio
+from .tipos import (PRIMITIVOS, asignable, elemento, es_arreglo, es_numerico, tamano, tipo_binario,
+                    tipo_unario)
 
 FASE = "semantico"
 
@@ -38,12 +40,25 @@ class Funcion:
     descripcion: str
 
 
+# Acciones que solo tienen sentido en un módulo de dominio.
+SOLO_EN_DOMINIO = {
+    "alarma": "conduccion", "detener_alarma": "conduccion",
+    "contar_repeticion": "rehabilitacion", "contar_ejercicio": "rehabilitacion",
+    "repeticiones": "rehabilitacion",
+}
+MAX_GESTOS_SECUENCIA = 5
+# Dependen del estado actual, de la cámara o de un módulo: una función no las puede usar.
+SOLO_EN_ESTADOS = {"alarma", "detener_alarma", "contar_repeticion", "contar_ejercicio", "repeticiones",
+                   "tiempo_en_estado"}
+
 FUNCIONES = {f.nombre: f for f in [
     Funcion("alarma", ["string"], "void", "Activa la alarma sonora/visual con un mensaje"),
     Funcion("detener_alarma", [], "void", "Apaga la alarma"),
     Funcion("registrar", ["string"], "void", "Agrega un evento a la bitácora (CSV)"),
     Funcion("mostrar", None, "void", "Imprime valores en la consola/overlay"),
     Funcion("contar_repeticion", [], "void", "Registra una repetición del ejercicio y su simetría"),
+    Funcion("contar_ejercicio", ["string", "proporcion"], "void",
+            "Registra una repetición de un ejercicio con la simetría indicada"),
     Funcion("repeticiones", [], "int", "Número de repeticiones contadas"),
     Funcion("tiempo_en_estado", [], "duracion", "Tiempo transcurrido desde que se entró al estado"),
     Funcion("abs", ["num"], "num", "Valor absoluto"),
@@ -51,6 +66,8 @@ FUNCIONES = {f.nombre: f for f in [
     Funcion("a_proporcion", ["decimal"], "proporcion", "Convierte 40 -> 0.4 (40%)"),
     Funcion("a_ms", ["duracion"], "decimal", "Duración expresada en milisegundos"),
     Funcion("a_s", ["duracion"], "decimal", "Duración expresada en segundos"),
+    Funcion("a_int", ["num"], "int", "Conversión explícita a int: quita los decimales"),
+    Funcion("a_decimal", ["num"], "decimal", "Conversión explícita a decimal"),
 ]}
 
 
@@ -79,6 +96,7 @@ class InfoDominio:
     secuencias: dict = field(default_factory=dict)
     maquinas: dict = field(default_factory=dict)
     usados: set = field(default_factory=set)
+    habilitadas: set = None     # métricas de 'usar'; None = todas
 
 
 @dataclass
@@ -86,6 +104,8 @@ class Analisis:
     programa: N.Programa
     dominios: dict
     tabla: list             # todos los símbolos, en orden de declaración
+    estructuras: dict = field(default_factory=dict)   # nombre -> {campo: tipo}
+    funciones: dict = field(default_factory=dict)     # nombre -> N.Funcion
 
 
 class Semantico:
@@ -99,6 +119,12 @@ class Semantico:
             self._definir(self.global_, Simbolo(f.nombre, "funcion", f.retorno, "global"))
         self.maquina_actual = None
         self.en_gesto = False
+        self.info = None
+        self.funcion_actual = None
+        self.estructuras = {}
+        self.usuario = {}             # funciones declaradas: nombre -> Funcion (firma)
+        self.nodos_funcion = {}
+        self.programa_amb = Ambito("programa", self.global_)
 
     # --- utilidades -------------------------------------------------------
     def _error(self, msg, nodo):
@@ -126,18 +152,95 @@ class Semantico:
 
     # --- programa ---------------------------------------------------------
     def analizar(self, programa: N.Programa) -> Analisis:
+        for e in programa.estructuras:
+            self._estructura(e)
+        for f in programa.funciones:
+            self._firma(f)
+        for v in programa.variables:
+            self._decl_var(v, self.programa_amb)
+        for f in programa.funciones:
+            self._funcion(f)
+        p = self.usuario.get("principal")
+        if p and (p.params or p.retorno not in ("int", "void")):
+            self._error("'principal' no recibe parámetros y devuelve int o nada", self.nodos_funcion["principal"])
         dominios = {}
         for dom in programa.dominios:
             if dom.nombre in dominios:
                 self._error(f"dominio '{dom.nombre}' duplicado", dom)
                 continue
             dominios[dom.nombre] = self._dominio(dom)
-        return Analisis(programa, dominios, self.tabla)
+        self.info = None
+        return Analisis(programa, dominios, self.tabla, self.estructuras, self.nodos_funcion)
+
+    # --- estructuras y funciones ------------------------------------------
+    def _tipo_valido(self, tipo, nodo, abierto=False):
+        base = elemento(tipo) if es_arreglo(tipo) else tipo
+        if base not in PRIMITIVOS and base not in self.estructuras:
+            self._error(f"tipo desconocido '{base}'", nodo)
+            return False
+        if es_arreglo(tipo):
+            if base not in PRIMITIVOS:
+                self._error("un arreglo solo puede contener tipos primitivos", nodo)
+                return False
+            n = tamano(tipo)
+            if n is None and not abierto:
+                self._error("el arreglo debe indicar su tamaño", nodo)
+                return False
+            if n is not None and n <= 0:
+                self._error("el tamaño de un arreglo debe ser mayor que cero", nodo)
+                return False
+        return True
+
+    def _estructura(self, e: N.Estructura):
+        if not self._definir(self.programa_amb, Simbolo(e.nombre, "estructura", "estructura", "programa", e.linea, nodo=e), e):
+            return
+        campos = {}
+        for c in e.campos:
+            if c.nombre in campos:
+                self._error(f"el campo '{c.nombre}' está repetido en '{e.nombre}'", c)
+            elif c.tipo_decl not in PRIMITIVOS:
+                self._error(f"el campo '{c.nombre}' debe ser de un tipo primitivo", c)
+            else:
+                campos[c.nombre] = c.tipo_decl
+        if not campos and not e.campos:
+            self._error(f"la estructura '{e.nombre}' no tiene campos", e)
+        self.estructuras[e.nombre] = campos
+
+    def _firma(self, f: N.Funcion):
+        tipos = []
+        for p in f.parametros:
+            self._tipo_valido(p.tipo_decl, p, abierto=True)
+            tipos.append(p.tipo_decl)
+        if f.retorno != "void" and f.retorno not in PRIMITIVOS:
+            self._error("una función solo puede devolver un tipo primitivo", f)
+        firma = f"({', '.join(tipos)}) -> {f.retorno}"
+        if self._definir(self.programa_amb, Simbolo(f.nombre, "funcion", firma, "programa", f.linea, nodo=f), f):
+            self.usuario[f.nombre] = Funcion(f.nombre, tipos, f.retorno, "")
+            self.nodos_funcion[f.nombre] = f
+
+    def _funcion(self, f: N.Funcion):
+        amb = Ambito(f"funcion {f.nombre}", self.programa_amb)
+        self.funcion_actual = f
+        for p in f.parametros:
+            self._definir(amb, Simbolo(p.nombre, "parametro", p.tipo_decl, amb.nombre, p.linea, mutable=True, nodo=p), p)
+        self._bloque(f.cuerpo, amb)
+        if f.retorno != "void" and not _siempre_retorna(f.cuerpo):
+            self._error(f"la función '{f.nombre}' debe devolver un valor {f.retorno} en todos los caminos", f)
+        self.funcion_actual = None
 
     def _dominio(self, dom: N.Dominio):
-        amb = Ambito(f"dominio {dom.nombre}", self.global_)
+        amb = Ambito(f"dominio {dom.nombre}", self.programa_amb)
         info = InfoDominio(dom.nombre, dom, amb)
         self.info = info
+
+        for sensor in dom.sensores:
+            for ident in sensor.usar:
+                if ident.nombre not in METRICAS:
+                    self._error(f"'{ident.nombre}' no es una métrica del sensor", ident)
+                else:
+                    if info.habilitadas is None:
+                        info.habilitadas = set()
+                    info.habilitadas.add(ident.nombre)
 
         for sensor in dom.sensores:
             for v in sensor.variables:
@@ -178,13 +281,41 @@ class Semantico:
         if v.tipo_decl in ("gesto", "secuencia"):
             self._error(f"los {v.tipo_decl}s se declaran con la palabra '{v.tipo_decl}', no con 'var'", v)
             return
-        t = self._expr(v.valor, amb)
-        if not asignable(v.tipo_decl, t):
-            self._error(f"no se puede asignar {t} a la variable '{v.nombre}' de tipo {v.tipo_decl}", v)
-        valor = self._constante(v.valor, amb)
-        self._verificar_rango(v.tipo_decl, valor, v)
-        self._definir(amb, Simbolo(v.nombre, "variable", v.tipo_decl, etiqueta or amb.nombre,
-                                   v.linea, mutable=True, valor=valor, nodo=v), v)
+        if not self._tipo_valido(v.tipo_decl, v):
+            return
+        compuesto = v.tipo_decl not in PRIMITIVOS
+        if compuesto:
+            valor = None
+            if v.constante:
+                self._error("una constante debe ser de un tipo primitivo", v)
+            if isinstance(v.valor, N.ArregloLit):
+                self._arreglo_lit(v, amb)
+            elif v.valor is not None:
+                self._error(f"'{v.nombre}' de tipo {v.tipo_decl} no se puede inicializar con una expresión", v)
+        elif isinstance(v.valor, N.ArregloLit):
+            self._error(f"una lista de valores no se puede asignar a '{v.nombre}' de tipo {v.tipo_decl}", v)
+            valor = None
+        else:
+            t = self._expr(v.valor, amb)
+            if not asignable(v.tipo_decl, t):
+                self._error(f"no se puede asignar {t} a la variable '{v.nombre}' de tipo {v.tipo_decl}", v)
+            valor = self._constante(v.valor, amb)
+            self._verificar_rango(v.tipo_decl, valor, v)
+            if v.constante and (valor is None or not _solo_constantes(v.valor, amb)):
+                self._error(f"el valor de la constante '{v.nombre}' debe conocerse al compilar", v)
+        self._definir(amb, Simbolo(v.nombre, "constante" if v.constante else "variable", v.tipo_decl,
+                                   etiqueta or amb.nombre, v.linea, mutable=not v.constante, valor=valor, nodo=v), v)
+
+    def _arreglo_lit(self, v, amb):
+        if not es_arreglo(v.tipo_decl):
+            self._error(f"una lista de valores no se puede asignar a '{v.nombre}' de tipo {v.tipo_decl}", v)
+            return
+        if len(v.valor.elementos) != tamano(v.tipo_decl):
+            self._error(f"'{v.nombre}' tiene {tamano(v.tipo_decl)} elementos y la lista {len(v.valor.elementos)}", v)
+        for e in v.valor.elementos:
+            t = self._expr(e, amb)
+            if not asignable(elemento(v.tipo_decl), t):
+                self._error(f"no se puede guardar {t} en un arreglo de {elemento(v.tipo_decl)}", e)
 
     def _verificar_rango(self, tipo, valor, nodo):
         if not isinstance(valor, (int, float)) or isinstance(valor, bool):
@@ -225,6 +356,9 @@ class Semantico:
                 self.info.usados.add(ident.nombre)
         if len(s.gestos) < 2:
             self._adv(f"la secuencia '{s.nombre}' tiene un solo gesto; use el gesto directamente", s)
+        if len(s.gestos) > MAX_GESTOS_SECUENCIA:
+            self._error(f"la secuencia '{s.nombre}' tiene {len(s.gestos)} gestos; el máximo es "
+                        f"{MAX_GESTOS_SECUENCIA}", s)
         if s.ventana is not None:
             t = self._expr(s.ventana, amb)
             if t not in (None, "duracion"):
@@ -261,6 +395,18 @@ class Semantico:
                 self._destino(c.destino, c)
             if c.cuerpo is not None:
                 self._bloque(c.cuerpo, amb)
+        for tr in e.tras:
+            t = self._expr(tr.duracion, amb)
+            if t not in (None, "duracion"):
+                self._error(f"'cuando tras' requiere una duración con unidad (ms o s), se recibió {t}",
+                            tr.duracion)
+            ms = self._constante(tr.duracion, amb)
+            if t == "duracion" and (not isinstance(ms, (int, float)) or ms <= 0):
+                self._error("la duración de 'cuando tras' debe ser constante y mayor que cero",
+                            tr.duracion)
+            else:
+                tr.ms = ms
+            self._destino(tr.destino, tr)
         manejados = {c.evento for c in e.cuandos}
         for ident in e.ignorados:
             sim = amb.buscar(ident.nombre)
@@ -301,10 +447,41 @@ class Semantico:
                 self._error(f"variable '{s.nombre}' no declarada", s)
             elif not sim.mutable:
                 self._error(f"'{s.nombre}' es {sim.categoria} y no se puede asignar", s)
+            elif sim.tipo not in PRIMITIVOS:
+                self._error(f"'{s.nombre}' de tipo {sim.tipo} no se puede asignar completo; "
+                            "asigne cada elemento", s)
             elif not asignable(sim.tipo, t):
                 self._error(f"no se puede asignar {t} a '{s.nombre}' de tipo {sim.tipo}", s)
-            else:
+            elif _solo_constantes(s.valor, amb):
                 self._verificar_rango(sim.tipo, self._constante(s.valor, amb), s)
+        elif isinstance(s, N.AsignacionElem):
+            t = self._expr(s.destino, amb)
+            tv = self._expr(s.valor, amb)
+            if t is not None and not asignable(t, tv):
+                self._error(f"no se puede asignar {tv} a un elemento de tipo {t}", s)
+        elif isinstance(s, N.Mientras):
+            t = self._expr(s.condicion, amb)
+            if t not in (None, "bool"):
+                self._error(f"la condición de 'mientras' debe ser bool, no {t}", s.condicion)
+            self._bloque(s.cuerpo, amb)
+        elif isinstance(s, N.Para):
+            for e in (s.inicio, s.fin):
+                t = self._expr(e, amb)
+                if t not in (None, "int"):
+                    self._error(f"los límites de 'para' deben ser int, no {t}", e)
+            interno = Ambito("bloque", amb)
+            self._definir(interno, Simbolo(s.variable, "variable", "int", f"{_ambito_nombrado(amb)} (bloque)",
+                                           s.linea, mutable=True, nodo=s), s)
+            self._bloque(s.cuerpo, interno)
+        elif isinstance(s, N.Retornar):
+            f = self.funcion_actual
+            tv = self._expr(s.valor, amb) if s.valor is not None else "void"
+            if f is None:
+                self._error("'retornar' solo puede usarse dentro de una función", s)
+            elif f.retorno == "void" and s.valor is not None:
+                self._error(f"la función '{f.nombre}' no devuelve un valor", s)
+            elif f.retorno != "void" and not asignable(f.retorno, tv):
+                self._error(f"'{f.nombre}' debe devolver {f.retorno}, no {tv}", s)
         elif isinstance(s, N.Si):
             t = self._expr(s.condicion, amb)
             if t not in (None, "bool"):
@@ -343,10 +520,47 @@ class Semantico:
             if sim is None:
                 self._error(f"identificador '{e.nombre}' no declarado", e)
                 return None
-            if sim.categoria in ("gesto", "secuencia", "maquina", "estado", "funcion"):
+            if sim.categoria in ("gesto", "secuencia", "maquina", "estado", "funcion", "estructura"):
                 self._error(f"'{e.nombre}' es {sim.categoria} y no puede usarse como valor", e)
                 return None
+            if sim.categoria == "metrica":
+                if self.info is None or self.funcion_actual is not None:
+                    self._error(f"la métrica '{e.nombre}' solo se puede leer dentro de un dominio; "
+                                "pásela como parámetro a la función", e)
+                    return None
+                hab = self.info.habilitadas
+                if hab is not None and e.nombre not in hab:
+                    self._error(f"la métrica '{e.nombre}' no está habilitada en 'usar' del sensor", e)
             return sim.tipo
+        if isinstance(e, N.Indice):
+            sim = amb.buscar(e.base)
+            t = self._expr(e.indice, amb)
+            if t not in (None, "int"):
+                self._error(f"el índice de un arreglo debe ser int, no {t}", e.indice)
+            if sim is None:
+                self._error(f"identificador '{e.base}' no declarado", e)
+                return None
+            if not es_arreglo(sim.tipo):
+                self._error(f"'{e.base}' no es un arreglo", e)
+                return None
+            n = self._constante(e.indice, amb) if _solo_constantes(e.indice, amb) else None
+            if tamano(sim.tipo) is not None and isinstance(n, int) and not 0 <= n < tamano(sim.tipo):
+                self._error(f"índice {n} fuera de rango: '{e.base}' tiene {tamano(sim.tipo)} elementos", e)
+            return elemento(sim.tipo)
+        if isinstance(e, N.Campo):
+            sim = amb.buscar(e.base)
+            if sim is None:
+                self._error(f"identificador '{e.base}' no declarado", e)
+                return None
+            campos = self.estructuras.get(sim.tipo)
+            if campos is None:
+                self._error(f"'{e.base}' no es una estructura", e)
+                return None
+            if e.campo not in campos:
+                self._error(f"la estructura {sim.tipo} no tiene el campo '{e.campo}'", e)
+                return None
+            e.estructura = sim.tipo
+            return campos[e.campo]
         if isinstance(e, N.Unaria):
             t, err = tipo_unario(e.op, self._expr(e.operando, amb))
             if err:
@@ -364,11 +578,22 @@ class Semantico:
         return None
 
     def _llamada(self, e: N.Llamada, amb, como_sentencia):
-        f = FUNCIONES.get(e.nombre)
+        f = self.usuario.get(e.nombre) or FUNCIONES.get(e.nombre)
         tipos_args = [self._expr(a, amb) for a in e.args]
         if f is None:
             self._error(f"función '{e.nombre}' no definida", e)
             return None
+        if f.nombre in SOLO_EN_ESTADOS and self.funcion_actual is not None:
+            self._error(f"'{f.nombre}' solo se puede usar dentro de un estado", e)
+        elif f.nombre in SOLO_EN_ESTADOS and self.info is None:
+            self._error(f"'{f.nombre}' solo se puede usar dentro de un estado", e)
+        elif self.info is not None:
+            requiere = SOLO_EN_DOMINIO.get(f.nombre)
+            clase = clase_dominio(self.info.nombre)
+            if requiere and clase not in (requiere, "general"):
+                self._error(f"'{f.nombre}' solo está disponible en el dominio {requiere}", e)
+        if f.params is None and any(t is not None and t not in PRIMITIVOS for t in tipos_args):
+            self._error(f"'{f.nombre}' solo recibe valores primitivos; muestre cada elemento", e)
         if self.en_gesto:
             self._error(f"no se pueden llamar funciones dentro de la condición de un gesto", e)
         if f.params is not None:
@@ -394,9 +619,40 @@ class Semantico:
 
 
 def _valor_simbolo(sim):
-    if sim is None or sim.categoria != "variable":
+    if sim is None or sim.categoria not in ("variable", "constante"):
         return None
     return sim.valor
+
+
+def _solo_constantes(e, amb):
+    """¿El valor no puede cambiar al ejecutar? Una variable puede haberse modificado
+    desde su declaración, así que su valor inicial no sirve para rechazar el programa."""
+    if isinstance(e, N.Literal):
+        return True
+    if isinstance(e, N.Identificador):
+        sim = amb.buscar(e.nombre)
+        return sim is not None and sim.categoria == "constante"
+    if isinstance(e, N.Unaria):
+        return _solo_constantes(e.operando, amb)
+    if isinstance(e, N.Binaria):
+        return _solo_constantes(e.izq, amb) and _solo_constantes(e.der, amb)
+    return False
+
+
+def _siempre_retorna(b):
+    """¿Todo camino por el bloque termina en 'retornar'?"""
+    for s in b.sentencias:
+        if isinstance(s, N.Retornar):
+            return True
+        if isinstance(s, N.Si) and _si_retorna(s):
+            return True
+    return False
+
+
+def _si_retorna(s):
+    if s.sino is None or not _siempre_retorna(s.entonces):
+        return False
+    return _siempre_retorna(s.sino) if isinstance(s.sino, N.Bloque) else _si_retorna(s.sino)
 
 
 def evaluar_constante(e, buscar):
@@ -437,6 +693,8 @@ def _identificadores(e):
     elif isinstance(e, N.Llamada):
         for a in e.args:
             yield from _identificadores(a)
+    elif isinstance(e, N.Indice):
+        yield from _identificadores(e.indice)
 
 
 def _ambito_nombrado(amb):

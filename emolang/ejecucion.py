@@ -4,12 +4,12 @@ import time
 from dataclasses import dataclass
 
 from .modulos import modulo_para
-from .motor import Motor
+from .vm import EmoVM
 
 
 @dataclass
 class ResultadoEjecucion:
-    motor: Motor
+    motor: EmoVM
     modulo: object
     eventos: list           # (t_ms, evento)
     cuadros: int
@@ -45,13 +45,14 @@ def regularizar(fuente, fps):
 
 
 def ejecutar(resultado, dominio, sensor, tiempo_real=False, sonido=False, verbose=True,
-             al_cuadro=None, ocultar=("parpadeo",)):
+             al_cuadro=None, ocultar=("parpadeo",), emoc=None):
+    """Ejecuta el programa en EmoVM. `emoc` permite indicar otro programa compilado."""
     def salida(texto):
         if verbose and not any(texto.rstrip().endswith(f"gesto      {o}") for o in ocultar):
             print(texto)
 
     modulo = modulo_para(dominio, sonido=sonido, salida=salida)
-    motor = Motor(resultado.analisis, resultado.automatas, dominio, modulo)
+    motor = EmoVM(emoc or resultado.emoc, dominio, modulo)
     if hasattr(sensor, "motor"):
         sensor.motor = motor   # la cámara dibuja el estado del motor sobre el video
 

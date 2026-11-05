@@ -15,6 +15,35 @@ class Nodo:
 @dataclass
 class Programa(Nodo):
     dominios: list
+    funciones: list = field(default_factory=list)
+    estructuras: list = field(default_factory=list)
+    variables: list = field(default_factory=list)
+
+
+@dataclass
+class Parametro(Nodo):
+    nombre: str
+    tipo_decl: str
+
+
+@dataclass
+class Funcion(Nodo):
+    nombre: str
+    parametros: list
+    retorno: str            # tipo, o "void" si no devuelve valor
+    cuerpo: "Bloque" = None
+
+
+@dataclass
+class CampoDecl(Nodo):
+    nombre: str
+    tipo_decl: str
+
+
+@dataclass
+class Estructura(Nodo):
+    nombre: str
+    campos: list
 
 
 @dataclass
@@ -31,13 +60,15 @@ class Dominio(Nodo):
 class Sensor(Nodo):
     nombre: str
     variables: list
+    usar: list = field(default_factory=list)   # list[Identificador]: métricas habilitadas
 
 
 @dataclass
 class DeclVar(Nodo):
     nombre: str
     tipo_decl: str
-    valor: "Nodo"
+    valor: "Nodo"           # None en arreglos y estructuras sin valor inicial
+    constante: bool = False
 
 
 @dataclass
@@ -71,6 +102,7 @@ class Estado(Nodo):
     cuandos: list
     mientras: list
     ignorados: list = field(default_factory=list)   # list[Identificador]
+    tras: list = field(default_factory=list)        # list[Tras]
 
 
 @dataclass
@@ -78,6 +110,13 @@ class Cuando(Nodo):
     evento: str
     destino: str = None      # forma corta: cuando g ir_a X;
     cuerpo: "Bloque" = None  # forma larga: cuando g { ... }
+
+
+@dataclass
+class Tras(Nodo):
+    duracion: "Nodo"
+    destino: str
+    ms: float = None         # valor constante, lo calcula el analizador semántico
 
 
 @dataclass
@@ -109,6 +148,25 @@ class Si(Nodo):
 class Repetir(Nodo):
     veces: "Nodo"
     cuerpo: Bloque
+
+
+@dataclass
+class AsignacionElem(Nodo):
+    destino: "Nodo"          # Indice o Campo
+    valor: "Nodo"
+
+
+@dataclass
+class Para(Nodo):
+    variable: str
+    inicio: "Nodo"
+    fin: "Nodo"              # el último valor sí se ejecuta
+    cuerpo: Bloque
+
+
+@dataclass
+class Retornar(Nodo):
+    valor: "Nodo" = None
 
 
 @dataclass
@@ -144,6 +202,24 @@ class Binaria(Nodo):
 class Unaria(Nodo):
     op: str                  # '-' | 'no'
     operando: Nodo
+
+
+@dataclass
+class Indice(Nodo):
+    base: str
+    indice: Nodo
+
+
+@dataclass
+class Campo(Nodo):
+    base: str
+    campo: str
+    estructura: str = None   # la anota el analizador semántico
+
+
+@dataclass
+class ArregloLit(Nodo):
+    elementos: list
 
 
 @dataclass

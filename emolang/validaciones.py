@@ -251,6 +251,13 @@ class Validador:
                     self._adv(f"el evento '{evento}' se maneja {len(cs)} veces en el estado "
                               f"'{e.nombre}'; solo se ejecuta el primero", cs[1])
 
+            destinos_tras = {}
+            for tr in e.tras:
+                destinos_tras.setdefault(tr.ms, set()).add(tr.destino)
+                if len(destinos_tras[tr.ms]) > 1:
+                    self._error(f"transiciones contradictorias en '{e.nombre}': 'tras' con la misma "
+                                f"duración lleva a {', '.join(sorted(destinos_tras[tr.ms]))}", tr)
+
             for w in e.mientras:
                 if e.nombre in {d for d, _ in _ir_a_en(w.cuerpo)}:
                     self._adv(f"'ir_a {e.nombre}' dentro de 'mientras' reingresa al estado en cada "
@@ -310,7 +317,7 @@ def _caja_total(caja):
 def _buscador(ambito):
     def buscar(nombre):
         sim = ambito.buscar(nombre)
-        return sim.valor if sim and sim.categoria == "variable" else None
+        return sim.valor if sim and sim.categoria in ("variable", "constante") else None
     return buscar
 
 
@@ -331,6 +338,8 @@ def _ir_a_en(nodo, condicional=False):
 
 
 def _transiciones_estado(e: N.Estado):
+    for tr in e.tras:
+        yield tr.destino, False
     for c in e.cuandos:
         if c.destino:
             yield c.destino, False

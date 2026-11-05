@@ -1,0 +1,25 @@
+// Ordenamiento de un arreglo por burbuja; el arreglo se pasa por referencia.
+funcion mostrar_arreglo(v : int[], n : int) {
+    para i = 0 hasta n - 1 {
+        mostrar(v[i]);
+    }
+}
+
+funcion ordenar(v : int[], n : int) {
+    para i = 0 hasta n - 2 {
+        para j = 0 hasta n - 2 - i {
+            si v[j] > v[j + 1] {
+                var aux : int = v[j];
+                v[j] = v[j + 1];
+                v[j + 1] = aux;
+            }
+        }
+    }
+}
+
+funcion principal() : int {
+    var datos : int[8] = [42, 7, 19, 3, 88, 1, 56, 23];
+    ordenar(datos, 8);
+    mostrar_arreglo(datos, 8);
+    retornar 0;
+}

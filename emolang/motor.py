@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from . import nodos as N
 from .errores import ErrorEmoLang
 from .metricas import metricas_neutras
+from .tipos import texto_valor
 
 MAX_ENCADENAMIENTO = 32
 MAX_REPETIR = 10_000
@@ -152,6 +153,9 @@ class Motor:
                             raise _Transicion(c.destino)
                         self._bloque(c.cuerpo, mq)
                         break
+            for tr in mq.actual.tras:
+                if self.t - mq.t_entrada >= tr.ms:
+                    raise _Transicion(tr.destino)
             for w in mq.actual.mientras:
                 if self._eval(w.condicion, [mq.locales]):
                     self._bloque(w.cuerpo, mq)
@@ -240,7 +244,7 @@ class Motor:
             a = self._eval(e.izq, entorno)
             b = self._eval(e.der, entorno)
             if e.op == "+" and e.tipo == "string":
-                return _texto(a, e.izq.tipo) + _texto(b, e.der.tipo)
+                return texto_valor(a, e.izq.tipo) + texto_valor(b, e.der.tipo)
             if e.op == "/":
                 if b == 0:
                     raise ErrorEmoLang("división entre cero", e.linea, e.columna)
@@ -264,9 +268,11 @@ class Motor:
         if n == "registrar":
             return m.registrar(args[0])
         if n == "mostrar":
-            return m.mostrar(" ".join(_texto(v, a.tipo) for v, a in zip(args, e.args)))
+            return m.mostrar(" ".join(texto_valor(v, a.tipo) for v, a in zip(args, e.args)))
         if n == "contar_repeticion":
             return m.contar_repeticion()
+        if n == "contar_ejercicio":
+            return m.contar_ejercicio(args[0], args[1])
         if n == "repeticiones":
             return m.repeticiones()
         if n == "tiempo_en_estado":
@@ -284,17 +290,8 @@ class Motor:
         raise ErrorEmoLang(f"función '{n}' no implementada")
 
     # ------------------------------------------------------------------ consulta
+    def gestos_activos(self):
+        return [g.nodo.nombre for g in self.gestos if g.activo]
+
     def estado_actual(self):
         return {mq.nodo.nombre: mq.actual.nombre if mq.actual else None for mq in self.maquinas}
-
-
-def _texto(v, tipo):
-    if tipo == "duracion":
-        return f"{v / 1000:g} s" if abs(v) >= 1000 else f"{v:g} ms"
-    if tipo == "proporcion":
-        return f"{v * 100:.1f}%"
-    if tipo == "bool":
-        return "verdadero" if v else "falso"
-    if isinstance(v, float):
-        return f"{v:.3f}".rstrip("0").rstrip(".")
-    return str(v)

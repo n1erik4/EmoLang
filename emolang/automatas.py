@@ -12,7 +12,7 @@ Cada construcción de EmoLang se traduce a un autómata:
              los eventos de gestos/secuencias; λ marca transiciones espontáneas
              (desde al_entrar o mientras).
 
-El motor de ejecución (runtime.py) evalúa directamente estas tablas.
+La máquina virtual (vm.py) evalúa directamente estas tablas.
 """
 
 import json
@@ -156,6 +156,8 @@ def afd_maquina(m: N.Maquina):
                     # el evento ejecuta acciones y (al menos en algún caso) permanece en el estado
                     trans.append(Transicion(e.nombre, c.evento, e.nombre,
                                             guarda="otro caso" if saltos else None, salida="acciones"))
+        for tr in e.tras:
+            trans.append(Transicion(e.nombre, f"tras {texto_expr(tr.duracion)}", tr.destino))
         for destino, guarda in _ir_a_con_guardas(e.al_entrar):
             trans.append(Transicion(e.nombre, LAMBDA, destino, guarda=guarda))
         for w in e.mientras:
@@ -245,6 +247,10 @@ def texto_expr(e, prec=0):
         return f"({t})" if p < prec else t
     if isinstance(e, N.Llamada):
         return f"{e.nombre}({', '.join(texto_expr(a) for a in e.args)})"
+    if isinstance(e, N.Indice):
+        return f"{e.base}[{texto_expr(e.indice)}]"
+    if isinstance(e, N.Campo):
+        return f"{e.base}.{e.campo}"
     return "?"
 
 

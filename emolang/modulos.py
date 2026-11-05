@@ -21,6 +21,7 @@ class ModuloBase:
         self.tiempo_alarma_ms = 0.0
         self.alarmas = 0
         self.reps = []              # (t_ms, simetria)
+        self.ejercicios = {}        # nombre -> [simetria de cada repetición]
         self.t = 0.0
         self.metricas = {}
 
@@ -70,6 +71,11 @@ class ModuloBase:
         self.reps.append((self.t, sim))
         self.evento("repeticion", f"#{len(self.reps)} simetria={sim:.2f}")
 
+    def contar_ejercicio(self, nombre, sim):
+        self.reps.append((self.t, sim))
+        self.ejercicios.setdefault(nombre, []).append(sim)
+        self.evento("repeticion", f"{nombre} #{len(self.ejercicios[nombre])} simetria={sim:.2f}")
+
     def repeticiones(self):
         return len(self.reps)
 
@@ -87,6 +93,19 @@ class ModuloBase:
             w.writerow(["t_s", "tipo", "detalle"])
             for t, tipo, det in self.bitacora:
                 w.writerow([f"{t / 1000:.3f}", tipo, det])
+
+
+class ModuloPrograma(ModuloBase):
+    """Programa con 'funcion principal': escribe su salida sin marcas de tiempo."""
+
+    nombre = "programa"
+
+    def mostrar(self, texto):
+        self.salida(texto)
+
+    def registrar(self, mensaje):
+        self.evento("registro", mensaje)
+        self.salida(mensaje)
 
 
 class ModuloConduccion(ModuloBase):
@@ -118,16 +137,26 @@ class ModuloRehabilitacion(ModuloBase):
         if len(self.reps) >= 2:
             ts = [t for t, _ in self.reps]
             r["ritmo_promedio_s"] = round((ts[-1] - ts[0]) / 1000 / (len(ts) - 1), 2)
+        for nombre, v in self.ejercicios.items():
+            r[f"ejercicio {nombre}"] = {"repeticiones": len(v),
+                                        "simetria_promedio_%": round(100 * sum(v) / len(v), 1),
+                                        "simetria_minima_%": round(100 * min(v), 1)}
         return r
 
 
-def modulo_para(dominio, **kw):
+def clase_dominio(dominio):
+    """Clasifica el nombre de un dominio: conduccion, rehabilitacion o general."""
     n = dominio.lower()
     if any(p in n for p in ("conduc", "transporte", "fatiga", "manejo")):
-        return ModuloConduccion(**kw)
+        return "conduccion"
     if any(p in n for p in ("rehab", "salud", "terapia")):
-        return ModuloRehabilitacion(**kw)
-    return ModuloBase(**kw)
+        return "rehabilitacion"
+    return "general"
+
+
+def modulo_para(dominio, **kw):
+    return {"conduccion": ModuloConduccion, "rehabilitacion": ModuloRehabilitacion,
+            "general": ModuloBase}[clase_dominio(dominio)](**kw)
 
 
 def _pitido():

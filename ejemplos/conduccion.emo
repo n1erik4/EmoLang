@@ -2,6 +2,7 @@
 dominio conduccion {
 
     sensor camara {
+        usar ear, mar, pitch, yaw, perclos;
         var fps : int = 30;
     }
 
@@ -64,6 +65,7 @@ dominio conduccion {
             al_entrar { alarma("Mire al frente"); }
             cuando atento ir_a normal;
             cuando microsueno ir_a alerta;
+            cuando tras 30 s ir_a alerta;         // lleva demasiado sin mirar al frente
             ignorar bostezo, distraccion, fatiga; // la alarma ya está sonando
         }
 

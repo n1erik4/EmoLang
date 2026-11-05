@@ -11,11 +11,26 @@ unidad, ni mezclar duracion con números en sumas o comparaciones.
 """
 
 NUMERICOS = {"int", "decimal", "proporcion"}
+PRIMITIVOS = NUMERICOS | {"bool", "string", "duracion"}
 COMPARACION = {"<", "<=", ">", ">=", "==", "!="}
 
 
 def es_numerico(t):
     return t in NUMERICOS
+
+
+def es_arreglo(t):
+    return isinstance(t, str) and t.endswith("]")
+
+
+def elemento(t):
+    return t[:t.index("[")]
+
+
+def tamano(t):
+    """Número de elementos de int[5]; None en int[]."""
+    n = t[t.index("[") + 1:-1]
+    return int(n) if n else None
 
 
 def asignable(destino, origen):
@@ -24,6 +39,8 @@ def asignable(destino, origen):
         return True  # ya se reportó un error antes; evitar cascadas
     if destino == origen:
         return True
+    if es_arreglo(destino) and es_arreglo(origen):
+        return tamano(destino) is None and elemento(destino) == elemento(origen)
     if destino == "decimal" and origen in ("int", "proporcion"):
         return True
     if destino == "proporcion" and origen in ("decimal", "int"):
@@ -52,7 +69,9 @@ def tipo_binario(op, a, b):
         return None, f"no se puede comparar {a} con {b} usando '{op}'"
 
     if op == "+" and "string" in (a, b):
-        return "string", None
+        if a in PRIMITIVOS and b in PRIMITIVOS:
+            return "string", None
+        return None, f"no se puede concatenar {a} con {b}"
 
     if op in ("+", "-"):
         if a == b == "duracion":
@@ -96,3 +115,16 @@ def tipo_unario(op, t):
             return t, None
         return None, f"'-' no aplicable a {t}"
     return None, f"operador desconocido {op!r}"
+
+
+def texto_valor(v, tipo):
+    """Texto de un valor según su tipo (concatenaciones y mostrar)."""
+    if tipo == "duracion":
+        return f"{v / 1000:g} s" if abs(v) >= 1000 else f"{v:g} ms"
+    if tipo == "proporcion":
+        return f"{v * 100:.1f}%"
+    if tipo == "bool":
+        return "verdadero" if v else "falso"
+    if isinstance(v, float):
+        return f"{v:.3f}".rstrip("0").rstrip(".")
+    return str(v)

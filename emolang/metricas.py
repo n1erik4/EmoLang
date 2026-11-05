@@ -30,8 +30,13 @@ METRICAS = {m.nombre: m for m in [
     Metrica("sonrisa_izq", "proporcion", 0.0, 1.0, (0.0, 1.0), "Elevación de la comisura izquierda"),
     Metrica("sonrisa_der", "proporcion", 0.0, 1.0, (0.0, 1.0), "Elevación de la comisura derecha"),
     Metrica("cejas", "proporcion", 0.0, 1.0, (0.0, 1.0), "Elevación de cejas normalizada"),
+    Metrica("cejas_izq", "proporcion", 0.0, 1.0, (0.0, 1.0), "Elevación de la ceja izquierda"),
+    Metrica("cejas_der", "proporcion", 0.0, 1.0, (0.0, 1.0), "Elevación de la ceja derecha"),
     Metrica("simetria", "proporcion", 0.0, 1.0, (0.0, 1.0),
             "Simetría facial izquierda/derecha (1 = perfectamente simétrico)"),
+    Metrica("simetria_sonrisa", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría de la sonrisa"),
+    Metrica("simetria_cejas", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría de la elevación de cejas"),
+    Metrica("simetria_ojos", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría del cierre de los ojos"),
     Metrica("perclos", "proporcion", 0.0, 1.0, (0.0, 1.0),
             "Proporción de tiempo con ojos cerrados en los últimos 60 s"),
     Metrica("pitch", "decimal", -90.0, 90.0, (-45.0, 45.0),
@@ -47,5 +52,6 @@ def metricas_neutras():
     return {
         "ear": 0.30, "ear_izq": 0.30, "ear_der": 0.30, "mar": 0.05,
         "sonrisa": 0.05, "sonrisa_izq": 0.05, "sonrisa_der": 0.05, "cejas": 0.2,
+        "cejas_izq": 0.2, "cejas_der": 0.2, "simetria_sonrisa": 1.0, "simetria_cejas": 1.0, "simetria_ojos": 1.0,
         "simetria": 0.97, "perclos": 0.0, "pitch": 0.0, "yaw": 0.0, "roll": 0.0, "rostro": True,
     }

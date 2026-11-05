@@ -20,8 +20,9 @@ OPERADORES_COMPARACION = {
     "IGUAL": "==", "DISTINTO": "!=",
 }
 
-INICIO_MIEMBRO_DOMINIO = {"SENSOR", "VAR", "GESTO", "SECUENCIA", "MAQUINA"}
-INICIO_MIEMBRO_ESTADO = {"VAR", "AL_ENTRAR", "CUANDO", "MIENTRAS", "IGNORAR"}
+INICIO_MIEMBRO_DOMINIO = {"SENSOR", "VAR", "CONST", "GESTO", "SECUENCIA", "MAQUINA"}
+INICIO_MIEMBRO_ESTADO = {"VAR", "CONST", "AL_ENTRAR", "CUANDO", "MIENTRAS", "IGNORAR"}
+INICIO_PROGRAMA = {"DOMINIO", "FUNCION", "ESTRUCTURA", "VAR", "CONST"}
 
 
 class Sintactico:
@@ -29,6 +30,7 @@ class Sintactico:
         self.tokens = tokens
         self.reporte = reporte or Reporte()
         self.i = 0
+        self.en_funcion = False
 
     # --- utilidades -------------------------------------------------------
     @property
@@ -97,16 +99,78 @@ class Sintactico:
 
     # --- programa ---------------------------------------------------------
     def programa(self):
-        dominios = []
+        prog = N.Programa([], linea=1, columna=1)
         while not self._es("EOF"):
             try:
-                dominios.append(self._dominio())
+                if self._es("FUNCION"):
+                    prog.funciones.append(self._funcion())
+                elif self._es("ESTRUCTURA"):
+                    prog.estructuras.append(self._estructura())
+                elif self._es("VAR", "CONST"):
+                    prog.variables.append(self._decl_var())
+                else:
+                    prog.dominios.append(self._dominio())
             except _ErrorSintactico:
-                self._sincronizar(tambien={"DOMINIO"})
+                self._sincronizar(tambien=INICIO_PROGRAMA)
                 self._aceptar("LLAVE_DER")
-        if not dominios and not self.reporte.tiene_errores():
-            self.reporte.error("sintactico", "el programa debe declarar al menos un dominio", 1, 1)
-        return N.Programa(dominios, linea=1, columna=1)
+        if not prog.dominios and not prog.funciones and not self.reporte.tiene_errores():
+            self.reporte.error("sintactico", "el programa debe declarar al menos un dominio o una función", 1, 1)
+        return prog
+
+    def _funcion(self):
+        inicio = self._esperar("FUNCION")
+        nombre = self._id("el nombre de la función").lexema
+        self._esperar("PAR_IZQ", "'('")
+        parametros = []
+        if not self._es("PAR_DER"):
+            while True:
+                tok = self._id("el nombre del parámetro")
+                self._esperar("DOS_PUNTOS", "':' seguido del tipo")
+                parametros.append(N.Parametro(tok.lexema, self._tipo(arreglo_abierto=True), **self._pos(tok)))
+                if not self._aceptar("COMA"):
+                    break
+        self._esperar("PAR_DER", "')'")
+        retorno = self._tipo() if self._aceptar("DOS_PUNTOS") else "void"
+        self.en_funcion = True
+        try:
+            cuerpo = self._bloque()
+        finally:
+            self.en_funcion = False
+        return N.Funcion(nombre, parametros, retorno, cuerpo, **self._pos(inicio))
+
+    def _estructura(self):
+        inicio = self._esperar("ESTRUCTURA")
+        nombre = self._id("el nombre de la estructura").lexema
+        self._esperar("LLAVE_IZQ", "'{'")
+        campos = []
+        while not self._es("LLAVE_DER", "EOF"):
+            try:
+                tok = self._id("el nombre del campo")
+                self._esperar("DOS_PUNTOS", "':' seguido del tipo")
+                tipo = self._tipo()
+                self._esperar("PUNTO_COMA", "';'")
+                campos.append(N.CampoDecl(tok.lexema, tipo, **self._pos(tok)))
+            except _ErrorSintactico:
+                self._sincronizar()
+        self._esperar("LLAVE_DER", "'}' al cerrar la estructura")
+        return N.Estructura(nombre, campos, **self._pos(inicio))
+
+    def _tipo(self, arreglo_abierto=False):
+        """Tipo primitivo, nombre de una estructura o arreglo: int[5] (int[] solo en parámetros)."""
+        tok = self.actual
+        if tok.lexema not in TIPOS and tok.tipo != "ID":
+            self._error(f"tipo desconocido {tok.lexema!r}")
+        self._avanzar()
+        tipo = tok.lexema
+        if self._aceptar("COR_IZQ"):
+            if self._es("ENTERO"):
+                tipo += f"[{self._avanzar().valor}]"
+            elif arreglo_abierto:
+                tipo += "[]"
+            else:
+                self._error("el tamaño de un arreglo debe ser un número entero")
+            self._esperar("COR_DER", "']'")
+        return tipo
 
     def _dominio(self):
         inicio = self._esperar("DOMINIO", "'dominio'")
@@ -124,7 +188,7 @@ class Sintactico:
     def _miembro_dominio(self, dom):
         if self._es("SENSOR"):
             dom.sensores.append(self._sensor())
-        elif self._es("VAR"):
+        elif self._es("VAR", "CONST"):
             dom.variables.append(self._decl_var())
         elif self._es("GESTO"):
             dom.gestos.append(self._gesto())
@@ -140,29 +204,46 @@ class Sintactico:
         inicio = self._esperar("SENSOR")
         nombre = self._id("el nombre del sensor").lexema
         self._esperar("LLAVE_IZQ", "'{'")
-        variables = []
+        variables, usar = [], []
         while not self._es("LLAVE_DER", "EOF"):
             try:
-                if not self._es("VAR"):
-                    self._error("un sensor solo puede contener declaraciones 'var'")
-                variables.append(self._decl_var())
+                if self._aceptar("USAR"):
+                    while True:
+                        tok = self._id("una métrica")
+                        usar.append(N.Identificador(tok.lexema, **self._pos(tok)))
+                        if not self._aceptar("COMA"):
+                            break
+                    self._esperar("PUNTO_COMA", "';'")
+                elif self._es("VAR"):
+                    variables.append(self._decl_var())
+                else:
+                    self._error("un sensor solo puede contener 'usar' y declaraciones 'var'")
             except _ErrorSintactico:
-                self._sincronizar(tambien={"VAR"})
+                self._sincronizar(tambien={"VAR", "USAR"})
         self._esperar("LLAVE_DER", "'}' al cerrar el sensor")
-        return N.Sensor(nombre, variables, **self._pos(inicio))
+        return N.Sensor(nombre, variables, usar, **self._pos(inicio))
 
     def _decl_var(self):
-        inicio = self._esperar("VAR")
+        inicio = self._avanzar()      # var o const
+        constante = inicio.tipo == "CONST"
         nombre = self._id("el nombre de la variable").lexema
         self._esperar("DOS_PUNTOS", "':' seguido del tipo")
-        tipo_tok = self.actual
-        if tipo_tok.lexema not in TIPOS:
-            self._error(f"tipo desconocido {tipo_tok.lexema!r}")
-        self._avanzar()
+        tipo = self._tipo()
+        compuesto = tipo.endswith("]") or tipo not in TIPOS
+        if compuesto and self._aceptar("PUNTO_COMA"):
+            return N.DeclVar(nombre, tipo, None, constante, **self._pos(inicio))
         self._esperar("ASIGNACION", "'=' (toda variable debe inicializarse)")
-        valor = self._expr()
+        valor = self._arreglo_lit() if self._es("COR_IZQ") else self._expr()
         self._esperar("PUNTO_COMA", "';'")
-        return N.DeclVar(nombre, tipo_tok.lexema, valor, **self._pos(inicio))
+        return N.DeclVar(nombre, tipo, valor, constante, **self._pos(inicio))
+
+    def _arreglo_lit(self):
+        inicio = self._esperar("COR_IZQ")
+        elementos = [self._expr()]
+        while self._aceptar("COMA"):
+            elementos.append(self._expr())
+        self._esperar("COR_DER", "']'")
+        return N.ArregloLit(elementos, **self._pos(inicio))
 
     def _gesto(self):
         inicio = self._esperar("GESTO")
@@ -225,7 +306,7 @@ class Sintactico:
         est = N.Estado(nombre, [], None, [], [], **self._pos(inicio))
         while not self._es("LLAVE_DER", "EOF"):
             try:
-                if self._es("VAR"):
+                if self._es("VAR", "CONST"):
                     est.variables.append(self._decl_var())
                 elif self._es("AL_ENTRAR"):
                     tok = self._avanzar()
@@ -234,7 +315,8 @@ class Sintactico:
                                            tok.linea, tok.columna)
                     est.al_entrar = self._bloque()
                 elif self._es("CUANDO"):
-                    est.cuandos.append(self._cuando())
+                    regla = self._cuando()
+                    (est.tras if isinstance(regla, N.Tras) else est.cuandos).append(regla)
                 elif self._es("MIENTRAS"):
                     tok = self._avanzar()
                     cond = self._expr()
@@ -257,6 +339,12 @@ class Sintactico:
 
     def _cuando(self):
         inicio = self._esperar("CUANDO")
+        if self._aceptar("TRAS"):
+            duracion = self._expr()
+            self._esperar("IR_A", "'ir_a' (cuando tras D solo puede cambiar de estado)")
+            destino = self._id("el estado destino").lexema
+            self._esperar("PUNTO_COMA", "';'")
+            return N.Tras(duracion, destino, **self._pos(inicio))
         evento = self._id("un gesto o secuencia").lexema
         if self._aceptar("IR_A"):
             destino = self._id("el estado destino").lexema
@@ -280,8 +368,28 @@ class Sintactico:
 
     def _sentencia(self):
         tok = self.actual
-        if self._es("VAR"):
+        if self._es("VAR", "CONST"):
             return self._decl_var()
+        if self._es("RETORNAR"):
+            self._avanzar()
+            valor = None if self._es("PUNTO_COMA") else self._expr()
+            self._esperar("PUNTO_COMA", "';'")
+            return N.Retornar(valor, **self._pos(tok))
+        if self._es("MIENTRAS") and self.en_funcion:
+            self._avanzar()
+            cond = self._expr()
+            return N.Mientras(cond, self._bloque(), **self._pos(tok))
+        if self._es("PARA"):
+            if not self.en_funcion:
+                self._error("'para' solo puede usarse dentro de una función; "
+                            "en un estado use 'repetir' para no detener el video")
+            self._avanzar()
+            variable = self._id("la variable del ciclo").lexema
+            self._esperar("ASIGNACION", "'='")
+            inicio = self._expr()
+            self._esperar("HASTA", "'hasta'")
+            fin = self._expr()
+            return N.Para(variable, inicio, fin, self._bloque(), **self._pos(tok))
         if self._es("SI"):
             return self._si()
         if self._es("REPETIR"):
@@ -307,6 +415,12 @@ class Sintactico:
                 llamada = self._llamada()
                 self._esperar("PUNTO_COMA", "';'")
                 return N.SentenciaLlamada(llamada, **self._pos(tok))
+            if self._ver().tipo in ("COR_IZQ", "PUNTO"):
+                destino = self._elemento()
+                self._esperar("ASIGNACION", "'='")
+                valor = self._expr()
+                self._esperar("PUNTO_COMA", "';'")
+                return N.AsignacionElem(destino, valor, **self._pos(tok))
         self._error(f"sentencia no válida que inicia con {tok.lexema!r}")
 
     def _si(self):
@@ -393,6 +507,8 @@ class Sintactico:
         if self._es("ID"):
             if self._ver().tipo == "PAR_IZQ":
                 return self._llamada()
+            if self._ver().tipo in ("COR_IZQ", "PUNTO"):
+                return self._elemento()
             self._avanzar()
             return N.Identificador(tok.lexema, **self._pos(tok))
         if self._aceptar("PAR_IZQ"):
@@ -401,6 +517,16 @@ class Sintactico:
             return e
         encontrado = "fin de archivo" if tok.tipo == "EOF" else repr(tok.lexema)
         self._error(f"se esperaba una expresión y se encontró {encontrado}")
+
+    def _elemento(self):
+        """v[i] o p.x"""
+        tok = self._id("un arreglo o estructura")
+        if self._aceptar("COR_IZQ"):
+            indice = self._expr()
+            self._esperar("COR_DER", "']'")
+            return N.Indice(tok.lexema, indice, **self._pos(tok))
+        self._esperar("PUNTO", "'.'")
+        return N.Campo(tok.lexema, self._id("el nombre del campo").lexema, **self._pos(tok))
 
     def _llamada(self):
         tok = self._id("el nombre de la función")

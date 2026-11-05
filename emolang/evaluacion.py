@@ -16,12 +16,14 @@ from .ejecucion import ejecutar
 from .sensores import SensorCSV, SensorSimulado
 
 # Tipos de evento que el simulador etiqueta con verdad de terreno
-ETIQUETADOS = ["parpadeo", "bostezo", "microsueno", "cabeceo", "distraccion", "sonrisa"]
+ETIQUETADOS = ["parpadeo", "bostezo", "microsueno", "cabeceo", "distraccion", "sonrisa", "cejas", "ojos"]
 
 # Nombre del evento real en el simulador -> nombres de gesto aceptados en el programa
 ALIAS = {
     "sonrisa": ["sonrisa", "sonreir", "sonrisa_ejercicio"],
     "microsueno": ["microsueno", "microsueño", "somnolencia"],
+    "cejas": ["elevar_cejas"],
+    "ojos": ["cerrar_ojos"],
 }
 
 
@@ -102,10 +104,11 @@ def evaluar(resultado, dominio, fuentes, tolerancia_ms=1500, anticipo_ms=0):
     latencias_proc = []
     nombres = []
     evaluados = set()
+    programa = resultado.emoc_para_evaluar()
     for nombre, sensor, etiquetables in fuentes:
         mapa = _mapa(gestos, etiquetables)
         evaluados |= set(mapa)
-        res = ejecutar(resultado, dominio, sensor, verbose=False)
+        res = ejecutar(resultado, dominio, sensor, verbose=False, emoc=programa)
         nombres.append(nombre)
         latencias_proc.extend(res.latencias_ms)
         for g, tipo_real in mapa.items():
