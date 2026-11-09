@@ -204,6 +204,7 @@ El generador (`emolang/intermedio.py`) recorre el AST con una pila semántica ex
 | Operadores | Significado |
 |---|---|
 | `+ - * / < <= > >= == != y o neg no` | aritmética y lógica |
+| `shl` | desplazamiento a la izquierda; lo introduce la reducción de fuerza |
 | `texto`, `concat` | convertir a texto y concatenar |
 | `=` | asignación |
 | `gotoF`, `goto`, `ret` | saltos y fin de bloque |
@@ -217,6 +218,8 @@ El generador (`emolang/intermedio.py`) recorre el AST con una pila semántica ex
 | `[]`, `[]=` | lee o escribe un elemento de un arreglo |
 | `campo`, `campo=` | lee o escribe un campo de una estructura |
 
-Las cuádruplas calculan condiciones y acciones; el tiempo lo cuentan los autómatas. El optimizador (`emolang/optimizador.py`) aplica propagación de constantes, plegado, eliminación de subexpresiones comunes, eliminación de código muerto, mirilla y desenrollado de `repetir` de hasta 4 vueltas. El compilador escribe el resultado en un archivo `.emoc` que ejecuta EmoVM (`emolang/vm.py`).
+Las cuádruplas calculan condiciones y acciones; el tiempo lo cuentan los autómatas. Las expresiones se evalúan de izquierda a derecha.
+
+El optimizador (`emolang/optimizador.py`) aplica técnicas locales (plegado, subexpresiones comunes, simplificación algebraica y reducción de fuerza), de mirilla, de ciclos (desenrollado de `repetir` de hasta 4 vueltas, código invariante y variables de inducción) y globales (propagación de constantes y código muerto). `python -m emolang costos archivo.emo` compara el consumo antes y después. El compilador escribe el resultado en un archivo `.emoc` que ejecuta EmoVM (`emolang/vm.py`).
 
 `emolang/motor.py` es el intérprete directo del AST. Ya no se usa para ejecutar programas y no admite funciones, arreglos ni estructuras: se conserva como referencia para comprobar que EmoVM, con y sin optimizar, produce exactamente la misma bitácora (`tests/test_vm.py`).

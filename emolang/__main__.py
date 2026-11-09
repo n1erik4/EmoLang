@@ -5,6 +5,7 @@
     python -m emolang semantico   programa.emo
     python -m emolang cuadruplas  programa.emo [--sin-optimizar]
     python -m emolang direcciones programa.emo [--sin-optimizar]
+    python -m emolang costos      programa.emo        (consumo antes y después de optimizar)
     python -m emolang notacion    "a + 0.5 * b" [--de infija|postfija|prefija]
     python -m emolang compilar    programa.emo [-o salida]
     python -m emolang correr      programa.emo|programa.emoc      (ejecuta 'funcion principal')
@@ -115,6 +116,27 @@ def cmd_direcciones(args):
                 print(f"\nMARCO DE PILA {marco.bloque}  ({marco.bytes} bytes)")
                 for e in marco.entradas:
                     print(fila.format(e.nombre, e.categoria, e.tipo, e.direccion, e.bytes))
+        print()
+    return 0
+
+
+def cmd_costos(args):
+    from .costos import comparar, reporte
+    from .intermedio import PROGRAMA
+    from .sensores import SensorSimulado
+    r = _compilar_o_salir(args.archivo)
+    for nombre in r.optimizado:
+        print(f"DOMINIO {nombre}")
+        if nombre == PROGRAMA:
+            antes, despues = comparar(r)
+        else:
+            cuadros = list(SensorSimulado(_escenario_de(nombre), fps=r.emoc["dominios"][nombre]["fps"]))
+            antes, despues = comparar(r, nombre, cuadros)
+        print(reporte(antes, despues))
+        inf = r.informes[nombre]
+        print("\nTÉCNICAS APLICADAS")
+        for tecnica, n in inf.aplicaciones.most_common():
+            print(f"  {tecnica}: {n}")
         print()
     return 0
 
@@ -346,6 +368,9 @@ def main(argv=None):
     sp.add_argument("archivo")
     sp.add_argument("--sin-optimizar", action="store_true")
 
+    sp = sub.add_parser("costos", help="compara el consumo antes y después de optimizar")
+    sp.add_argument("archivo")
+
     sp = sub.add_parser("notacion", help="convierte una expresión entre infija, postfija y prefija")
     sp.add_argument("expresion")
     sp.add_argument("--de", choices=["infija", "postfija", "prefija"], default="infija")
@@ -402,7 +427,7 @@ def main(argv=None):
 
     args = p.parse_args(argv)
     return {"lexico": cmd_lexico, "sintactico": cmd_sintactico, "semantico": cmd_semantico,
-            "cuadruplas": cmd_cuadruplas, "direcciones": cmd_direcciones, "notacion": cmd_notacion, "compilar": cmd_compilar, "correr": cmd_correr, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
+            "cuadruplas": cmd_cuadruplas, "direcciones": cmd_direcciones, "notacion": cmd_notacion, "costos": cmd_costos, "compilar": cmd_compilar, "correr": cmd_correr, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
             "capturar": cmd_capturar, "diagnostico": cmd_diagnostico, "grabar": cmd_grabar}[args.comando](args)
 
 

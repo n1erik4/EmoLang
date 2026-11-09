@@ -1,12 +1,20 @@
-"""Optimizador de cuádruplas. Aplica seis técnicas hasta que ya no hay cambios:
+"""Optimizador de cuádruplas. Aplica estas técnicas hasta que ya no hay cambios:
 
-  propagación    una variable con una sola escritura constante se cambia por su valor
-  plegado        operaciones entre constantes se calculan al compilar
-  desenrollado   un 'repetir' constante de hasta 4 vueltas se cambia por copias del cuerpo
-  subexpresiones una operación ya calculada en el mismo bloque se reutiliza
-  mirilla        una operación y la asignación que la sigue se unen en una cuádrupla
-  código muerto  se quita lo que no afecta al resultado: escrituras que nadie lee,
-                 código inalcanzable, y gestos o secuencias que nadie usa
+  Locales
+    plegado        operaciones entre constantes se calculan al compilar
+    subexpresiones una operación ya calculada en el mismo bloque se reutiliza
+    algebraica     identidades: x + 0, x * 1, x * 0, x - x, b y verdadero, no (a < b)...
+    fuerza         operación cara por una barata: x * 2 -> x + x, x * 8 -> x << 3
+  De mirilla
+    mirilla        una operación y la asignación que la sigue se unen en una cuádrupla
+  De ciclos
+    desenrollado   un 'repetir' constante de hasta 4 vueltas se cambia por copias del cuerpo
+    invariante     un cálculo que no cambia dentro del ciclo se saca antes del ciclo
+    induccion      i * c dentro de un ciclo se cambia por una suma a un acumulador
+  Globales
+    propagación    una variable con una sola escritura constante se cambia por su valor
+    código muerto  se quita lo que no afecta al resultado: escrituras que nadie lee,
+                   código inalcanzable, funciones, gestos o secuencias que nadie usa
 
 Toda optimización conserva el comportamiento observable: alarmas, registros,
 transiciones y eventos (lo comprueban las pruebas comparando ambas versiones).
@@ -21,7 +29,9 @@ from .tipos import texto_valor
 
 MAX_DESENROLLADO = 4
 EXPRESIONES = OPERADORES_PUROS - {"="}
-TECNICAS = ["propagacion", "plegado", "subexpresiones", "muerto", "mirilla", "desenrollado"]
+TECNICAS = ["propagacion", "plegado", "subexpresiones", "muerto", "mirilla", "desenrollado",
+            "algebraica", "fuerza", "invariante", "induccion"]
+NEGADA = {"<": ">=", "<=": ">", ">": "<=", ">=": "<", "==": "!=", "!=": "=="}
 
 
 @dataclass
@@ -83,6 +93,8 @@ def calcular(op, a, b):
         return texto_valor(a, b)
     if op == "concat":
         return a + b
+    if op == "shl":
+        return a << b
     if op == "=":
         return a
     raise ValueError(op)
@@ -103,10 +115,16 @@ class Optimizador:
             self.cambio = False
             self._propagar()
             for nombre in list(self.prog.bloques):
+                self._constantes_locales(nombre)
                 self._plegar(nombre)
                 self._desenrollar(nombre)
+                self._invariante(nombre)
                 self._subexpresiones(nombre)
                 self._mirilla(nombre)
+                self._induccion(nombre)
+                self._algebraica(nombre)
+                self._fuerza(nombre)
+                self._copias(nombre)
             self._muerto()
             if not self.cambio:
                 break
@@ -140,6 +158,26 @@ class Optimizador:
                         setattr(c, campo, temporales[x])
                         self.cambio = True
 
+    def _constantes_locales(self, nombre):
+        """Dentro de un bloque básico, un temporal con valor constante se cambia por ese valor,
+        aunque se escriba en varios lugares (como en las copias de un ciclo desenrollado)."""
+        conocidos = {}
+        for c in self.prog.bloques[nombre]:
+            if c.op == "etq":
+                conocidos.clear()
+                continue
+            for campo in c.lecturas():
+                x = getattr(c, campo)
+                if isinstance(x, str) and x in conocidos:
+                    setattr(c, campo, conocidos[x])
+                    self.informe.anota("propagacion", x, conocidos[x], nombre)
+                    self.cambio = True
+            destino = c.escribe()
+            if destino:
+                conocidos.pop(destino, None)
+                if c.op == "=" and isinstance(c.a1, Constante) and es_temporal(destino):
+                    conocidos[destino] = c.a1
+
     # --- plegado ----------------------------------------------------------
     def _plegar(self, nombre):
         bloque = self.prog.bloques[nombre]
@@ -159,7 +197,7 @@ class Optimizador:
                 try:
                     v = calcular(c.op, c.a1.valor, c.a2 if c.op == "texto" else
                                  (c.a2.valor if c.a2 is not None else None))
-                except (ZeroDivisionError, TypeError):
+                except (ZeroDivisionError, TypeError, ValueError):
                     salida.append(c)      # el error debe ocurrir al ejecutar, con su línea
                     continue
                 nueva = Cuadrupla("=", Constante(v, _tipo_de(v)), None, c.res, c.linea)
@@ -223,6 +261,224 @@ class Optimizador:
             copia.append(d)
         return copia
 
+    # --- utilidades de tipos y ciclos --------------------------------------
+    def _tipo(self, bloque, x):
+        if isinstance(x, Constante):
+            return x.tipo
+        return self.prog.tipos.get((bloque, x)) if es_temporal(x) else self.prog.tipos.get(x)
+
+    def _temporal_nuevo(self, bloque, tipo):
+        usados = [int(c.res[1:]) for c in self.prog.bloques[bloque]
+                  if es_temporal(c.escribe()) and c.res.startswith("t")]
+        t = f"t{max(usados, default=0) + 1}"
+        self.prog.tipos[(bloque, t)] = tipo
+        return t
+
+    @staticmethod
+    def _ciclos(bloque):
+        """Lista de (inicio, fin): la etiqueta y el salto de regreso. Primero los más internos."""
+        etiquetas = {c.res: i for i, c in enumerate(bloque) if c.op == "etq"}
+        ciclos = [(etiquetas[c.res], j) for j, c in enumerate(bloque)
+                  if c.op == "goto" and etiquetas.get(c.res, j + 1) < j]
+        return sorted(ciclos, key=lambda r: r[1] - r[0])
+
+    def _llama_usuario(self, cuadruplas):
+        return any(c.op == "call" and c.a1 in self.prog.funciones for c in cuadruplas)
+
+    @staticmethod
+    def _es_local(x):
+        """Nadie fuera del bloque la puede cambiar: temporal, local o variable de estado."""
+        return es_temporal(x) or ("." in x and not x.startswith("global."))
+
+    # --- código invariante ------------------------------------------------
+    def _invariante(self, nombre):
+        hubo = True
+        while hubo:
+            hubo = False
+            bloque = self.prog.bloques[nombre]
+            escrituras = Counter(c.escribe() for c in bloque if c.escribe())
+            for inicio, fin in self._ciclos(bloque):
+                cuerpo = bloque[inicio + 1:fin]
+                dentro = Counter(c.escribe() for c in cuerpo if c.escribe())
+                llama = self._llama_usuario(cuerpo)
+                for k, c in enumerate(cuerpo):
+                    if not (c.op in EXPRESIONES and es_temporal(c.res) and escrituras[c.res] == 1):
+                        continue
+                    if _division_riesgosa(c):
+                        continue
+                    ops = [getattr(c, f) for f in c.lecturas()]
+                    if any(isinstance(x, str) and (dentro[x] or (llama and not self._es_local(x))) for x in ops):
+                        continue
+                    del bloque[inicio + 1 + k]
+                    bloque.insert(inicio, c)
+                    self.informe.anota("invariante", c, "se calcula antes del ciclo", nombre)
+                    self.cambio = hubo = True
+                    break
+                if hubo:
+                    break
+
+    # --- reducción de fuerza en ciclos ------------------------------------
+    def _induccion(self, nombre):
+        hubo = True
+        while hubo:
+            hubo = False
+            bloque = self.prog.bloques[nombre]
+            for inicio, fin in self._ciclos(bloque):
+                cuerpo = bloque[inicio + 1:fin]
+                dentro = Counter(c.escribe() for c in cuerpo if c.escribe())
+                llama = self._llama_usuario(cuerpo)
+                for c in cuerpo:
+                    par = self._multiplicacion_entera(nombre, c)
+                    if par is None:
+                        continue
+                    i, factor = par
+                    if dentro[i] != 1 or dentro[c.res] != 1 or c.res == i:
+                        continue
+                    if llama and not self._es_local(i):
+                        continue
+                    paso = next((q for q in cuerpo if q.escribe() == i), None)
+                    if not (paso.op == "+" and paso.a1 == i and isinstance(paso.a2, Constante)
+                            and paso.a2.tipo == "int"):
+                        continue
+                    # acumulador == i * factor en todo momento: se ajusta justo después de cambiar i
+                    s = self._temporal_nuevo(nombre, "int")
+                    antes = str(c)
+                    pos_paso = next(n for n, q in enumerate(bloque) if q is paso)
+                    bloque.insert(pos_paso + 1, Cuadrupla("+", s, Constante(factor * paso.a2.valor, "int"), s, c.linea))
+                    bloque.insert(inicio, Cuadrupla("*", i, Constante(factor, "int"), s, c.linea))
+                    c.op, c.a1, c.a2 = "=", s, None
+                    self.informe.anota("induccion", antes, f"{s} se acumula en cada vuelta", nombre)
+                    self.cambio = hubo = True
+                    break
+                if hubo:
+                    break
+
+    def _multiplicacion_entera(self, nombre, c):
+        if c.op != "*" or self._tipo(nombre, c.res) != "int":
+            return None
+        for x, k in ((c.a1, c.a2), (c.a2, c.a1)):
+            if (isinstance(x, str) and isinstance(k, Constante) and k.tipo == "int"
+                    and self._tipo(nombre, x) == "int"):
+                return x, k.valor
+        return None
+
+    # --- simplificación algebraica ----------------------------------------
+    def _cero(self, nombre, res):
+        if self._tipo(nombre, res) in ("decimal", "proporcion", "duracion"):
+            return Constante(0.0, "decimal")
+        return Constante(0, "int")
+
+    def _algebraica(self, nombre):
+        bloque = self.prog.bloques[nombre]
+        lecturas = _lecturas(bloque)
+        for i, c in enumerate(bloque):
+            antes = str(c)
+            nuevo = self._simplificar(nombre, c, bloque[i - 1] if i else None, lecturas)
+            if nuevo is None:
+                continue
+            c.op, c.a1, c.a2 = nuevo
+            self.informe.anota("algebraica", antes, c, nombre)
+            self.cambio = True
+
+    def _simplificar(self, nombre, c, previa, lecturas):
+        op, a, b = c.op, c.a1, c.a2
+        es = lambda x, v: isinstance(x, Constante) and not isinstance(x.valor, bool) and x.valor == v
+        copia = lambda x: ("=", x, None)
+        verdad = lambda v: ("=", Constante(v, "bool"), None)
+        constante = lambda x, v: isinstance(x, Constante) and x.valor is v
+        mismos = not isinstance(a, Constante) and a == b
+        if op == "+":
+            if es(b, 0):
+                return copia(a)
+            if es(a, 0):
+                return copia(b)
+        elif op == "-":
+            if es(b, 0):
+                return copia(a)
+            if mismos:
+                return ("=", self._cero(nombre, c.res), None)
+        elif op == "*":
+            if es(b, 1):
+                return copia(a)
+            if es(a, 1):
+                return copia(b)
+            if es(a, 0) or es(b, 0):
+                return ("=", self._cero(nombre, c.res), None)
+        elif op == "/":
+            if es(b, 1) and self._tipo(nombre, a) != "int":
+                return copia(a)
+        elif op == "y":
+            if constante(b, True) or mismos:
+                return copia(a)
+            if constante(a, True):
+                return copia(b)
+            if constante(a, False) or constante(b, False):
+                return verdad(False)
+        elif op == "o":
+            if constante(b, False) or mismos:
+                return copia(a)
+            if constante(a, False):
+                return copia(b)
+            if constante(a, True) or constante(b, True):
+                return verdad(True)
+        elif op in ("==", "<=", ">=") and mismos:
+            return verdad(True)
+        elif op in ("!=", "<", ">") and mismos:
+            return verdad(False)
+        elif op in ("no", "neg") and previa is not None and es_temporal(a) and previa.res == a and lecturas[a] == 1:
+            if previa.op == op and not isinstance(previa.a1, Constante):
+                return copia(previa.a1)
+            if op == "no" and previa.op in NEGADA:
+                return (NEGADA[previa.op], previa.a1, previa.a2)
+        return None
+
+    # --- reducción de fuerza local ----------------------------------------
+    def _fuerza(self, nombre):
+        for c in self.prog.bloques[nombre]:
+            if c.op != "*":
+                continue
+            for x, k in ((c.a1, c.a2), (c.a2, c.a1)):
+                if isinstance(x, Constante) or not isinstance(k, Constante) or isinstance(k.valor, bool):
+                    continue
+                antes = str(c)
+                if k.valor == 2:
+                    c.op, c.a1, c.a2 = "+", x, x
+                elif (isinstance(k.valor, int) and k.valor > 2 and k.valor & (k.valor - 1) == 0
+                      and self._tipo(nombre, x) == "int"):
+                    c.op, c.a1, c.a2 = "shl", x, Constante(k.valor.bit_length() - 1, "int")
+                else:
+                    continue
+                self.informe.anota("fuerza", antes, c, nombre)
+                self.cambio = True
+                break
+
+    # --- propagación de copias --------------------------------------------
+    def _copias(self, nombre):
+        """(=, y, -, t): las lecturas de t se cambian por y mientras y no se modifique."""
+        bloque = self.prog.bloques[nombre]
+        lecturas = _lecturas(bloque)
+        escrituras = Counter(c.escribe() for c in bloque if c.escribe())
+        quitar = []
+        for i, c in enumerate(bloque):
+            if not (c.op == "=" and es_temporal(c.res) and isinstance(c.a1, str) and escrituras[c.res] == 1):
+                continue
+            encontradas = []
+            for q in bloque[i + 1:]:
+                if q.op == "etq":
+                    break
+                encontradas += [(q, f) for f in q.lecturas() if getattr(q, f) == c.res]
+                if q.escribe() == c.a1:
+                    break
+                if q.op == "call" and q.a1 in self.prog.funciones and not self._es_local(c.a1):
+                    break
+            if len(encontradas) == lecturas[c.res]:
+                for q, f in encontradas:
+                    setattr(q, f, c.a1)
+                quitar.append(c)
+                self.cambio = True
+        if quitar:
+            self.prog.bloques[nombre] = [q for q in bloque if not any(q is x for x in quitar)]
+
     # --- subexpresiones comunes -------------------------------------------
     def _subexpresiones(self, nombre):
         bloque = self.prog.bloques[nombre]
@@ -240,6 +496,10 @@ class Optimizador:
                 x = getattr(c, campo)
                 if isinstance(x, str) and x in reemplazos:
                     setattr(c, campo, reemplazos[x])
+            if c.op == "call" and c.a1 in self.prog.funciones:
+                # la función puede cambiar variables globales
+                for k in [k for k in tabla if any(isinstance(x, str) and not self._es_local(x) for x in k[1:])]:
+                    del tabla[k]
             if c.op in EXPRESIONES:
                 clave = (c.op, _clave(c.a1), _clave(c.a2))
                 previo = tabla.get(clave)
@@ -405,6 +665,10 @@ class Optimizador:
                     continue
                 salida.append(c)
             prog.bloques[nombre] = salida
+
+
+def _lecturas(bloque):
+    return Counter(getattr(c, f) for c in bloque for f in c.lecturas() if isinstance(getattr(c, f), str))
 
 
 def _division_riesgosa(c):

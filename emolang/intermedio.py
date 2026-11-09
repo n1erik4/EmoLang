@@ -26,7 +26,7 @@ from .tipos import PRIMITIVOS, elemento, es_arreglo, tamano
 RE_TEMPORAL = re.compile(r"^[tc]\d+$")
 # Operadores sin efectos secundarios: su resultado se puede plegar, reutilizar o quitar.
 OPERADORES_PUROS = {"=", "+", "-", "*", "/", "<", "<=", ">", ">=", "==", "!=", "y", "o",
-                    "neg", "no", "texto", "concat"}
+                    "neg", "no", "texto", "concat", "shl"}
 # Además de los puros, estos dejan un valor en su resultado.
 LECTURAS_MEMORIA = {"[]", "campo", "alloc", "alloc_e"}
 MAX_REPETIR = 10_000
@@ -341,7 +341,9 @@ class Generador:
     def _asignar_elemento(self, s):
         d = s.destino
         if isinstance(d, N.Indice):
-            i = self._valor(d.indice)
+            self._expr(d.indice)
+            self._fijar_antes_de([s.valor])
+            i, _ = self._sacar()
             v = self._valor(s.valor)
             self._emitir("[]=", v, i, self._slot(d.base), s.linea)
         else:
@@ -467,8 +469,29 @@ class Generador:
         self._resultado(t, e.tipo)
         self._anota(f"Reconoce {e.op}: tipo {e.tipo}", c)
 
+    def _fijar_antes_de(self, siguiente):
+        """Si lo que sigue llama a una función, esta podría cambiar la variable que ya se
+        evaluó: se copia a un temporal para conservar el orden de izquierda a derecha."""
+        lugar, tipo = self.pila[-1]
+        if isinstance(lugar, str) and not es_temporal(lugar) and any(self._llama(s) for s in siguiente):
+            copia = self._temporal(tipo)
+            self._emitir("=", lugar, None, copia)
+            self.pila[-1] = (copia, tipo)
+
+    def _llama(self, e):
+        if isinstance(e, N.Llamada):
+            return e.nombre in self.analisis.funciones or any(self._llama(a) for a in e.args)
+        if isinstance(e, N.Binaria):
+            return self._llama(e.izq) or self._llama(e.der)
+        if isinstance(e, N.Unaria):
+            return self._llama(e.operando)
+        if isinstance(e, N.Indice):
+            return self._llama(e.indice)
+        return False
+
     def _binaria(self, e):
         self._expr(e.izq)
+        self._fijar_antes_de([e.der])
         self._expr(e.der)
         b, tb = self._sacar()
         a, ta = self._sacar()
@@ -486,6 +509,7 @@ class Generador:
 
     def _concatenar(self, e):
         self._expr(e.izq)
+        self._fijar_antes_de([e.der])
         self._expr(e.der)
         b, tb = self._sacar()
         a, ta = self._sacar()
@@ -517,8 +541,9 @@ class Generador:
         self._resultado(r, "bool")
 
     def _llamada(self, e):
-        for a in e.args:
+        for i, a in enumerate(e.args):
             self._expr(a)
+            self._fijar_antes_de(e.args[i + 1:])
         valores = [self._sacar() for _ in e.args][::-1]
         variadica = e.nombre == "mostrar"
         lugares = []

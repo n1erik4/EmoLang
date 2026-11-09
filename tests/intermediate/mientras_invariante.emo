@@ -1,0 +1,17 @@
+// Un mientras con un límite que se recalcula en cada vuelta y un arreglo.
+funcion llena(v : int[], n : int, base : int) {
+    var i : int = 0;
+    mientras i < n - 1 + 1 {
+        v[i] = base * base + i * 2;
+        i = i + 1;
+    }
+}
+
+funcion principal() : int {
+    var v : int[6];
+    llena(v, 6, 3);
+    para i = 0 hasta 5 {
+        mostrar(v[i]);
+    }
+    retornar 0;
+}
