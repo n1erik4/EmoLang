@@ -126,5 +126,6 @@ def texto_valor(v, tipo):
     if tipo == "bool":
         return "verdadero" if v else "falso"
     if isinstance(v, float):
-        return f"{v:.3f}".rstrip("0").rstrip(".")
+        texto = f"{v:.3f}".rstrip("0").rstrip(".")
+        return "0" if texto == "-0" else texto
     return str(v)

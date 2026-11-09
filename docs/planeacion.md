@@ -40,10 +40,10 @@ Entrega: **27 de noviembre o antes**. Meta interna: **todo listo el viernes 20**
 - [x] Local: plegado y subexpresiones comunes
 - [x] Mirilla
 - [x] Global: propagación de constantes y código muerto
-- [~] Ciclos: hay desenrollado; falta código invariante
-- [ ] Simplificación algebraica
-- [ ] Reducción de fuerza
-- [~] Costos antes y después: se cuentan cuádruplas; falta tiempo, memoria, registros y pilas
+- [x] Ciclos: desenrollado, código invariante y variables de inducción
+- [x] Simplificación algebraica
+- [x] Reducción de fuerza
+- [x] Costos antes y después: `python -m emolang costos`
 
 ## Tema 4: Código objeto
 
@@ -64,7 +64,7 @@ Entrega: **27 de noviembre o antes**. Meta interna: **todo listo el viernes 20**
 ## Suite de pruebas
 
 - [~] `tests/semantic/`: hay `ejemplos/errores.emo` y pruebas unitarias; falta la carpeta
-- [ ] `tests/intermediate/`: ciclos anidados y código redundante, con reducción antes y después
+- [x] `tests/intermediate/`: ciclos anidados y código redundante, con reducción antes y después
 - [~] `tests/execution/`: Fibonacci, factorial, ordenamiento y calculadora ya corren en EmoVM; falta en ensamblador
 
 ## Presentación y portafolio
@@ -92,7 +92,7 @@ Objetivo 7 del anteproyecto. El alcance es facial, no de cuerpo.
 | 5 de noviembre | Rutina de terapia facial con el sensor simulado | Hecho, sin commit |
 | Cuanto antes | Con buena luz: probar la cámara en conducción y terapia facial, y calibrar umbrales. Confirmar los cambios en Git | Pendiente |
 | 6 al 8 | Tabla de direcciones y convertidor de notaciones | Hecho, sin commit |
-| 8 al 10 | Optimizador: simplificación algebraica, reducción de fuerza, código invariante y costos | |
+| 8 al 10 | Optimizador: simplificación algebraica, reducción de fuerza, código invariante y costos | Hecho, sin commit |
 | 10 al 15 | Backend x86-64: registros, `.asm`, segmentos y marco de pila; los cuatro algoritmos en ensamblador | |
 | 15 al 17 | Gestos en ensamblador. Se recorta si el backend se atrasa, porque va después de lo obligatorio | |
 | 16 al 18 | Suite de pruebas en `tests/semantic`, `tests/intermediate` y `tests/execution` | |

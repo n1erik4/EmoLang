@@ -1,0 +1,17 @@
+// Ciclos anidados con cálculos que no cambian dentro del ciclo.
+// Muestra código invariante y reducción de fuerza.
+funcion suma_tabla(n : int, ancho : int) : int {
+    var total : int = 0;
+    para i = 0 hasta n {
+        para j = 0 hasta n {
+            total = total + (ancho * ancho) + i * 8 + j * 4;
+        }
+    }
+    retornar total;
+}
+
+funcion principal() : int {
+    mostrar(suma_tabla(3, 5));
+    mostrar(suma_tabla(10, 2));
+    retornar 0;
+}

@@ -88,6 +88,10 @@ class EmoVM:
         self.gestos = {a["nombre"]: _GestoVivo(a) for a in d["gestos"]}
         self.secuencias = {a["nombre"]: _SecuenciaVivo(a) for a in d["secuencias"]}
         self.maquinas = [_MaquinaVivo(m) for m in d["maquinas"]]
+        self.ejecutadas = 0
+        self.profundidad = self.profundidad_maxima = 0
+        self.pila_actual = self.pila_maxima = 0
+        self.tam_marcos = {}
         self.funciones = d.get("funciones", {})
         self.estructuras = d.get("estructuras", {})
         self._correr("init")
@@ -177,7 +181,16 @@ class EmoVM:
 
     def _llamar_funcion(self, nombre, args):
         f = self.funciones[nombre]
-        return self._correr(f["bloque"], dict(zip(f["params"], args)), nombre + ".")
+        marco = self.tam_marcos.get(nombre, 0)
+        self.profundidad += 1
+        self.pila_actual += marco
+        self.profundidad_maxima = max(self.profundidad_maxima, self.profundidad)
+        self.pila_maxima = max(self.pila_maxima, self.pila_actual)
+        try:
+            return self._correr(f["bloque"], dict(zip(f["params"], args)), nombre + ".")
+        finally:
+            self.profundidad -= 1
+            self.pila_actual -= marco
 
     def _correr(self, nombre, marco=None, prefijo=None):
         """Ejecuta un bloque. Una función usa su propio marco para parámetros, locales y
@@ -203,6 +216,7 @@ class EmoVM:
         while True:
             op, a1, a2, res, linea = bloque[pc]
             pc += 1
+            self.ejecutadas += 1
             if op == "ret":
                 return None
             if op == "retv":

@@ -1,0 +1,31 @@
+// Código redundante a propósito: constantes, identidades, cálculos repetidos,
+// variables sin usar, código inalcanzable y una función que nadie llama.
+const FACTOR : int = 4;
+
+funcion nunca() : int {
+    retornar 123;
+}
+
+funcion calcular(x : int, y1 : int) : int {
+    var sin_usar : int = x * 100;
+    var a : int = x + 0;
+    var b : int = a * 1;
+    var c : int = (x + y1) * (x + y1) + (x + y1);
+    var d : int = FACTOR * 2 + 3;
+    var e : int = b * 16;
+    si 2 > 3 {
+        mostrar("inalcanzable");
+    }
+    retornar c + d + e - (b - b);
+    mostrar("después de retornar");
+}
+
+funcion principal() : int {
+    para i = 1 hasta 5 {
+        mostrar(calcular(i, 2));
+    }
+    repetir 3 veces {
+        mostrar(no (1 > 2));
+    }
+    retornar 0;
+}
