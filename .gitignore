@@ -5,3 +5,7 @@ salida/
 modelos/
 /*.asm
 /*.exe
+web/dist/
+web/*.db
+web/*.db-journal
+web/certificados/

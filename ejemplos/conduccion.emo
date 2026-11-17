@@ -23,7 +23,7 @@ dominio conduccion {
     gesto bostezo      = mar > umbral_bostezo durante 1.5 s tolerando 200 ms;
     gesto cabeceo      = pitch > cabeceo_grados y ear < 0.27 durante 300 ms tolerando 100 ms;
     gesto distraccion  = yaw > giro_grados o yaw < -giro_grados durante 2 s tolerando 200 ms;
-    gesto atento       = pitch < 10.0 y yaw < 20.0 y yaw > -20.0 durante 3 s tolerando 200 ms;
+    gesto atento       = pitch < 10.0 y yaw < 20.0 y yaw > -20.0 y ear > umbral_ojo durante 3 s tolerando 200 ms;
 
     // Patrón de fatiga: bostezo seguido de cabeceo en menos de 10 s
     secuencia fatiga = [bostezo, cabeceo] en 10 s;

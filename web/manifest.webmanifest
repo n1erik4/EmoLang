@@ -1,0 +1,11 @@
+{
+  "name": "EmoLang",
+  "short_name": "EmoLang",
+  "description": "Terapia facial y detección de fatiga con la cámara; el video nunca sale del dispositivo.",
+  "lang": "es-MX",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
