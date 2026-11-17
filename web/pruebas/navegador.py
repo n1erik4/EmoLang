@@ -67,6 +67,12 @@ def main():
         contexto = nav.new_context(viewport={"width": a.ancho, "height": a.alto}, device_scale_factor=2,
                                    is_mobile=a.ancho < 700, has_touch=a.ancho < 700,
                                    ignore_https_errors=True)   # la persona acepta la advertencia
+        # Registra cada frase que la página manda decir (aquí no se puede escuchar).
+        contexto.add_init_script("""
+            window.__voz = [];
+            const hablar = speechSynthesis.speak.bind(speechSynthesis);
+            speechSynthesis.speak = (u) => { window.__voz.push([u.text, u.volume]); hablar(u); };
+        """)
         pag = contexto.new_page()
         pag.on("console", lambda m: m.type in ("error", "warning") and errores.append(f"{m.type}: {m.text}"))
         pag.on("pageerror", lambda e: errores.append(f"pageerror: {e}"))
@@ -85,8 +91,8 @@ def main():
         pag.wait_for_selector("#inicio:not([hidden])", timeout=15_000)
         pag.screenshot(path=f"{a.salida}/1_inicio.png", full_page=True)
         t = time.time()
-        pag.wait_for_selector('#chip-motor[data-estado="listo"]', state="attached", timeout=120_000)
-        pag.wait_for_selector('#chip-detector[data-estado="listo"]', state="attached", timeout=120_000)
+        pag.wait_for_selector('html[data-motor="listo"]', state="attached", timeout=120_000)
+        pag.wait_for_selector('html[data-detector="listo"]', state="attached", timeout=120_000)
         print(f"carga: {time.time() - t:.1f} s")
         pag.click(f'[data-iniciar="{a.modulo}"]')
         pag.wait_for_selector("#capa:not([hidden])", timeout=30_000)
@@ -110,6 +116,8 @@ def main():
         time.sleep(0.5)
         pag.screenshot(path=f"{a.salida}/4_resultados.png", full_page=True)
         print("resultados:", " | ".join(pag.locator(".tarjeta").all_inner_texts()).replace("\n", " "))
+        frases = pag.evaluate("window.__voz")
+        print(f"voz: {len(frases)} frases;", " | ".join(f"{t} (vol {v})" for t, v in frases[:6]))
         guardadas = pag.evaluate("fetch('api/sesiones', {credentials: 'same-origin'}).then(r => r.json())")
         print("sesiones guardadas en el servidor:", json.dumps(guardadas)[:300])
         nav.close()

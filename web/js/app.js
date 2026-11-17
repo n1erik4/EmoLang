@@ -1,4 +1,5 @@
 // Interfaz de EmoLang: inicio, sesión con cámara y resultados.
+import { iniciarGaleria } from "./carrusel.js";
 import { abrirCamara, cadaCuadro, cargarDetector, cerrarCamara, ErrorCamara } from "./camara.js";
 import { callar, decir, desbloquear, mantenerPantalla, pitido, soltarPantalla } from "./avisos.js";
 import { crearSesion, cargarMotor, leerPrograma } from "./motor.js";
@@ -106,9 +107,11 @@ function error(texto, titulo = "No se pudo iniciar") {
 }
 
 // ====================================================================== carga
-function marcarChip(id, promesa) {
-  const chip = $(id);
-  promesa.then(() => { chip.dataset.estado = "listo"; }, () => { chip.dataset.estado = "error"; });
+// La carga se marca en <html data-motor data-detector> (la usan las pruebas de navegador).
+function marcarCarga(nombre, promesa) {
+  const raiz = document.documentElement;
+  raiz.dataset[nombre] = "cargando";
+  promesa.then(() => { raiz.dataset[nombre] = "listo"; }, () => { raiz.dataset[nombre] = "error"; });
 }
 
 function precargar() {
@@ -143,7 +146,7 @@ async function iniciarSesion(clave) {
   if (sesion || !usuario) return;
   if (clave !== cuenta.MODULO_DE_ROL[usuario.rol]) return;    // cada rol usa solo su módulo
   const mod = MODULOS[clave];
-  desbloquear();
+  desbloquear({ hablar: voz.activa });
   for (const b of document.querySelectorAll("[data-iniciar]")) b.disabled = true;
 
   prepararPanel(clave, mod);
@@ -818,6 +821,7 @@ async function verPrograma(clave) {
 }
 
 // ====================================================================== arranque
+iniciarGaleria(document.getElementById("galeria"));
 if (location.hash) history.replaceState(null, "", location.pathname);
 let precargado = false;
 function precargarUnaVez() {
@@ -825,8 +829,8 @@ function precargarUnaVez() {
   precargado = true;
   // Se precarga en segundo plano mientras la persona lee la página.
   (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => {
-    marcarChip("#chip-motor", cargarMotor());
-    marcarChip("#chip-detector", cargarDetector());
+    marcarCarga("motor", cargarMotor());
+    marcarCarga("detector", cargarDetector());
   });
 }
 

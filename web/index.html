@@ -19,10 +19,6 @@
       <span>EmoLang</span>
     </a>
     <div class="barra__derecha">
-      <div class="carga" id="carga" aria-live="polite">
-        <span class="chip" id="chip-motor" data-estado="cargando">Compilador</span>
-        <span class="chip" id="chip-detector" data-estado="cargando">Detector facial</span>
-      </div>
       <div class="cuenta" id="cuenta" hidden>
         <span class="cuenta__nombre" id="cuenta-nombre"></span>
         <button class="boton boton--texto boton--chico" id="boton-salir">Salir</button>
@@ -34,10 +30,11 @@
     <!-- ============================================================ ACCESO -->
     <section id="acceso" class="pantalla" hidden>
       <div class="acceso">
-        <div class="acceso__intro">
-          <h1>Ejercicios faciales y detección de fatiga con tu cámara</h1>
-          <p class="intro__texto">Cada módulo es un programa escrito en EmoLang. El compilador corre dentro de tu navegador y el video <strong>nunca sale de tu dispositivo</strong>: solo se guardan números.</p>
-        </div>
+        <section class="galeria" id="galeria" aria-label="EmoLang: terapia facial, conducción y tecnología">
+          <div class="galeria__fila" data-grupo="rostros" data-sentido="derecha"></div>
+          <div class="galeria__fila" data-grupo="manejo" data-sentido="izquierda"></div>
+          <div class="galeria__fila" data-grupo="tecnologia" data-sentido="derecha"></div>
+        </section>
         <div class="acceso__tarjeta">
           <div class="pestanas" role="tablist">
             <button role="tab" id="tab-entrar" aria-selected="true" aria-controls="form-entrar">Entrar</button>
@@ -82,6 +79,7 @@
             <button class="boton boton--primario" type="submit">Crear cuenta</button>
           </form>
         </div>
+
       </div>
     </section>
 

@@ -36,7 +36,7 @@ def construir(dist=DIST):
     os.makedirs(dist)
     for nombre in os.listdir(AQUI):
         origen = os.path.join(AQUI, nombre)
-        if nombre in ("dist", "pruebas", "construir.py", "servidor.py", "__pycache__", "certificados") or nombre.endswith((".db", ".db-journal")):
+        if nombre in ("dist", "pruebas", "construir.py", "servidor.py", "galeria.py", "__pycache__", "certificados") or nombre.endswith((".db", ".db-journal")):
             continue
         if os.path.isdir(origen):
             shutil.copytree(origen, os.path.join(dist, nombre))

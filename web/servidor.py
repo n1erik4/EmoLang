@@ -238,6 +238,8 @@ def manejador(servicio, dist, seguro):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "same-origin")
             self.send_header("Permissions-Policy", "camera=(self), microphone=()")
+            # Que el navegador revise si hay una versión nueva de la página en cada carga.
+            self.send_header("Cache-Control", "no-cache")
             super().end_headers()
 
         # ---------------------------------------------------------- utilidades
