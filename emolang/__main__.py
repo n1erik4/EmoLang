@@ -9,6 +9,7 @@
     python -m emolang notacion    "a + 0.5 * b" [--de infija|postfija|prefija]
     python -m emolang compilar    programa.emo [-o salida]
     python -m emolang correr      programa.emo|programa.emoc      (ejecuta 'funcion principal')
+    python -m emolang ensamblador programa.emo [--plataforma linux|windows] [-o salida.asm] [--correr]
     python -m emolang ejecutar    programa.emo|programa.emoc [--sensor simulado|csv|camara] ...
     python -m emolang evaluar     programa.emo [--escenario conduccion] ...
 """
@@ -292,6 +293,64 @@ def cmd_correr(args):
     return valor if isinstance(valor, int) else 0
 
 
+def cmd_ensamblador(args):
+    from . import codigo_objeto as CO
+    from .intermedio import PROGRAMA
+    r = _compilar_o_salir(args.archivo)
+    programas = r.cuadruplas if args.sin_optimizar else r.optimizado
+    if PROGRAMA not in programas:
+        print("El programa no tiene 'funcion principal': los módulos de dominio se ejecutan en EmoVM.")
+        return 1
+    try:
+        co = CO.generar(programas[PROGRAMA], r.analisis, args.plataforma, not args.sin_registros)
+    except ErrorEmoLang as e:
+        print(f"No se puede generar código objeto: {e}")
+        return 1
+    base = os.path.splitext(args.salida or os.path.basename(args.archivo))[0]
+    ruta_asm = base + CO.EXT_ASM
+    with open(ruta_asm, "w", encoding="utf-8") as f:
+        f.write(co.asm)
+    print(f"Ensamblador x86-64 ({co.plataforma}): {ruta_asm}  ({co.instrucciones} instrucciones)")
+    if args.registros:
+        print("\nASIGNACIÓN DE REGISTROS (linear scan sobre variables vivas)")
+        fila = "  {:<34} {:>7} {:>5}  {}"
+        for bloque, asig in co.asignaciones.items():
+            print(f"\n BLOQUE {bloque}  (usa {', '.join(asig.usados) or 'ninguno'})")
+            print(fila.format("VARIABLE", "DESDE", "HASTA", "LUGAR"))
+            for iv in asig.intervalos:
+                print(fila.format(iv.nombre, iv.inicio + 1, iv.fin + 1, iv.registro or "pila (derramada)"))
+    if args.correr:
+        if co.plataforma != CO.plataforma_local():
+            print(f"No se puede ejecutar código de {co.plataforma} en esta computadora.")
+            return 1
+        exe = base + CO.PLATAFORMAS[co.plataforma].exe
+        ok, mensajes = CO.ensamblar(ruta_asm, exe)
+        if not ok:
+            print("Error al ensamblar:\n" + mensajes)
+            return 1
+        print(f"Ejecutable: {exe}\n")
+        codigo, salida = CO.ejecutar(exe)
+        print(salida, end="")
+        print(f"\n(el programa terminó con código {codigo})")
+    return 0
+
+
+def cmd_fotos(args):
+    from . import fotos as F
+    carpeta = args.carpeta
+    metricas = args.metricas or os.path.join(carpeta, "metricas.csv")
+    if args.accion == "descargar":
+        F.descargar(carpeta, args.cantidad, args.etiqueta or F.ETIQUETAS)
+    elif args.accion == "analizar":
+        F.analizar(carpeta, metricas)
+    elif args.accion == "galeria":
+        F.galeria(carpeta, metricas, os.path.join(carpeta, "galeria.html"))
+    else:
+        texto = F.reporte(metricas, args.programa, carpeta, args.salida)
+        print(texto)
+    return 0
+
+
 def cmd_evaluar(args):
     from .evaluacion import evaluar, fuentes_csv, fuentes_simuladas, reporte_markdown
     r = _compilar_o_salir(args.archivo)
@@ -382,6 +441,24 @@ def main(argv=None):
     sp = sub.add_parser("correr", help="ejecuta 'funcion principal' en EmoVM")
     sp.add_argument("archivo")
 
+    sp = sub.add_parser("ensamblador", help="traduce a ensamblador x86-64 (.asm) y opcionalmente lo ejecuta")
+    sp.add_argument("archivo")
+    sp.add_argument("--plataforma", choices=["linux", "windows"], help="por omisión, la de esta computadora")
+    sp.add_argument("-o", "--salida", help="nombre del archivo .asm")
+    sp.add_argument("--sin-optimizar", action="store_true", help="traduce las cuádruplas sin optimizar")
+    sp.add_argument("--sin-registros", action="store_true", help="todas las variables en la pila")
+    sp.add_argument("--registros", action="store_true", help="muestra la asignación de registros")
+    sp.add_argument("--correr", action="store_true", help="ensambla con gcc y ejecuta")
+
+    sp = sub.add_parser("fotos", help="prueba la terapia facial con fotos fijas (Openverse + MediaPipe)")
+    sp.add_argument("accion", choices=["descargar", "analizar", "galeria", "reporte"])
+    sp.add_argument("carpeta", help="carpeta con una subcarpeta por etiqueta (fuera del repositorio)")
+    sp.add_argument("--cantidad", type=int, default=200, help="fotos por etiqueta al descargar")
+    sp.add_argument("--etiqueta", action="append", help="solo esta etiqueta (repetible)")
+    sp.add_argument("--metricas", help="CSV de métricas (por omisión, carpeta/metricas.csv)")
+    sp.add_argument("--programa", default="ejemplos/terapia_facial.emo")
+    sp.add_argument("-o", "--salida", help="guardar el reporte en Markdown")
+
     sp = sub.add_parser("ejecutar", help="ejecuta el programa sobre un sensor")
     sp.add_argument("archivo")
     sp.add_argument("--sensor", choices=["simulado", "csv", "camara"], default="simulado")
@@ -427,7 +504,7 @@ def main(argv=None):
 
     args = p.parse_args(argv)
     return {"lexico": cmd_lexico, "sintactico": cmd_sintactico, "semantico": cmd_semantico,
-            "cuadruplas": cmd_cuadruplas, "direcciones": cmd_direcciones, "notacion": cmd_notacion, "costos": cmd_costos, "compilar": cmd_compilar, "correr": cmd_correr, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
+            "cuadruplas": cmd_cuadruplas, "direcciones": cmd_direcciones, "notacion": cmd_notacion, "costos": cmd_costos, "compilar": cmd_compilar, "correr": cmd_correr, "ensamblador": cmd_ensamblador, "fotos": cmd_fotos, "ejecutar": cmd_ejecutar, "evaluar": cmd_evaluar,
             "capturar": cmd_capturar, "diagnostico": cmd_diagnostico, "grabar": cmd_grabar}[args.comando](args)
 
 

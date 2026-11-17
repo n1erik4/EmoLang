@@ -1,0 +1,13 @@
+// Más argumentos de los que caben en registros: los demás viajan por la pila.
+funcion ocho(a : int, b : int, c : int, d : int, e : int, f : int, g : int, h : int, k : decimal) : int {
+    retornar a * 1 + b * 2 + c * 3 + d * 4 + e * 5 + f * 6 + g * 7 + h * 8 + a_int(k);
+}
+funcion rec(n : int, a : int, b : int, c : int, d : int, e : int, f : int) : int {
+    si n == 0 { retornar a + b + c + d + e + f; }
+    retornar rec(n - 1, b, c, d, e, f, a + 1);
+}
+funcion principal() : int {
+    mostrar(ocho(1, 2, 3, 4, 5, 6, 7, 8, 9.9));
+    mostrar(rec(10, 1, 2, 3, 4, 5, 6));
+    retornar 0;
+}

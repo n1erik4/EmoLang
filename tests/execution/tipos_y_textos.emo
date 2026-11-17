@@ -1,0 +1,35 @@
+// Tipos, textos, conversiones y paso de muchos argumentos.
+estructura Punto { x : decimal; py : decimal; etiqueta : string; }
+var origen : Punto;
+var pesos : decimal[3] = [0.5, 1.25, 2.0];
+
+funcion muchos(a : int, b : decimal, c : int, d : decimal, e : int, f : decimal, g : int, h : decimal, i : int, j : decimal) : decimal {
+    retornar a + b + c + d + e + f + g + h + i + j;
+}
+
+funcion saludo(nombre : string, cuantas : int) : string {
+    var acum : string = "";
+    para k = 1 hasta cuantas { acum = acum + nombre; }
+    retornar acum;
+}
+
+funcion mitad(n : int) : decimal { retornar n / 2; }
+
+funcion principal() : int {
+    var p : proporcion = 0.4;
+    var t : duracion = 1500 ms;
+    var corto : duracion = 250 ms;
+    var ok : bool = 3 > 2 y no (1 == 2);
+    origen.x = 1.5;
+    origen.etiqueta = "origen";
+    mostrar("hola", saludo("ab", 3), ok, falso);
+    mostrar(p, t, corto, a_s(t), a_porcentaje(0.25));
+    mostrar(muchos(1, 0.5, 2, 0.25, 3, 0.125, 4, 1.0, 5, 2.5));
+    mostrar(mitad(7), mitad(8), abs(-4), abs(-2.5), a_int(-3.7));
+    mostrar("punto: " + origen.etiqueta + " " + origen.x, pesos[1] * 2);
+    mostrar(0.1 + 0.2, 1.0 / 3.0, -0.0001, 2.0 - 2.0);
+    var total : decimal = 0.0;
+    para k = 0 hasta 2 { total = total + pesos[k]; }
+    mostrar("total", total, "es", total > 3.0);
+    retornar 0;
+}

@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 salida/
 modelos/
+/*.asm
+/*.exe
