@@ -1,0 +1,20 @@
+// Factorial recursivo e iterativo.
+funcion factorial(n : int) : int {
+    si n <= 1 { retornar 1; }
+    retornar n * factorial(n - 1);
+}
+
+funcion factorial_ciclo(n : int) : int {
+    var r : int = 1;
+    para i = 2 hasta n {
+        r = r * i;
+    }
+    retornar r;
+}
+
+funcion principal() : int {
+    para n = 0 hasta 10 {
+        mostrar(n, factorial(n), factorial_ciclo(n));
+    }
+    retornar 0;
+}

@@ -10,6 +10,7 @@ Métricas calculadas por cuadro:
   pitch, yaw, roll        pose de la cabeza (grados) desde la matriz de transformación,
                           relativa a la postura neutra medida en la calibración
   simetria                comparación izquierda/derecha de sonrisa y apertura ocular
+  simetria_sonrisa/cejas/ojos  comparación izquierda/derecha de un solo ejercicio
 """
 
 import math
@@ -18,7 +19,7 @@ import time
 import urllib.request
 
 from .metricas import metricas_neutras
-from .sensores import simetria
+from .sensores import simetria, simetria_par
 
 URL_MODELO = ("https://storage.googleapis.com/mediapipe-models/face_landmarker/"
               "face_landmarker/float16/latest/face_landmarker.task")
@@ -92,6 +93,39 @@ def asegurar_modelo(ruta=RUTA_MODELO):
     return ruta
 
 
+def metricas_de(resultado, ancho, alto, previas, base_pose=(0.0, 0.0, 0.0)):
+    """Métricas de un resultado de FaceLandmarker. La usan la cámara y el análisis de fotos."""
+    m = dict(previas)
+    if not resultado.face_landmarks:
+        m["rostro"] = False
+        return m
+    lm = resultado.face_landmarks[0]
+    p = [(q.x * ancho, q.y * alto) for q in lm]
+    m["rostro"] = True
+    m["ear_der"] = min(1.0, _ear(p, OJO_DER))
+    m["ear_izq"] = min(1.0, _ear(p, OJO_IZQ))
+    m["ear"] = (m["ear_izq"] + m["ear_der"]) / 2
+    m["mar"] = min(1.0, _mar(p))
+    if resultado.face_blendshapes:
+        bs = {c.category_name: c.score for c in resultado.face_blendshapes[0]}
+        m["sonrisa_izq"] = bs.get("mouthSmileLeft", 0.0)
+        m["sonrisa_der"] = bs.get("mouthSmileRight", 0.0)
+        m["sonrisa"] = (m["sonrisa_izq"] + m["sonrisa_der"]) / 2
+        m["cejas"] = min(1.0, (bs.get("browInnerUp", 0.0) + bs.get("browOuterUpLeft", 0.0)
+                               + bs.get("browOuterUpRight", 0.0)) / 3 * 1.5)
+        m["cejas_izq"] = bs.get("browOuterUpLeft", 0.0)
+        m["cejas_der"] = bs.get("browOuterUpRight", 0.0)
+        m["simetria_sonrisa"] = simetria_par(m["sonrisa_izq"], m["sonrisa_der"])
+        m["simetria_cejas"] = simetria_par(m["cejas_izq"], m["cejas_der"])
+        m["simetria_ojos"] = simetria_par(bs.get("eyeBlinkLeft", 0.0), bs.get("eyeBlinkRight", 0.0))
+    if resultado.facial_transformation_matrixes:
+        pose = _euler(resultado.facial_transformation_matrixes[0])
+        m["pitch"], m["yaw"], m["roll"] = (max(-90.0, min(90.0, v - b))
+                                           for v, b in zip(pose, base_pose))
+    m["simetria"] = simetria(m["sonrisa_izq"], m["sonrisa_der"], m["ear_izq"], m["ear_der"])
+    return m
+
+
 class SensorCamara:
     def __init__(self, indice=0, fps=30, duracion=None, mostrar_video=True, calibracion_s=2.0):
         try:
@@ -129,30 +163,7 @@ class SensorCamara:
         return vision.FaceLandmarker.create_from_options(opciones)
 
     def _metricas(self, resultado, ancho, alto, previas):
-        m = dict(previas)
-        if not resultado.face_landmarks:
-            m["rostro"] = False
-            return m
-        lm = resultado.face_landmarks[0]
-        p = [(q.x * ancho, q.y * alto) for q in lm]
-        m["rostro"] = True
-        m["ear_der"] = min(1.0, _ear(p, OJO_DER))
-        m["ear_izq"] = min(1.0, _ear(p, OJO_IZQ))
-        m["ear"] = (m["ear_izq"] + m["ear_der"]) / 2
-        m["mar"] = min(1.0, _mar(p))
-        if resultado.face_blendshapes:
-            bs = {c.category_name: c.score for c in resultado.face_blendshapes[0]}
-            m["sonrisa_izq"] = bs.get("mouthSmileLeft", 0.0)
-            m["sonrisa_der"] = bs.get("mouthSmileRight", 0.0)
-            m["sonrisa"] = (m["sonrisa_izq"] + m["sonrisa_der"]) / 2
-            m["cejas"] = min(1.0, (bs.get("browInnerUp", 0.0) + bs.get("browOuterUpLeft", 0.0)
-                                   + bs.get("browOuterUpRight", 0.0)) / 3 * 1.5)
-        if resultado.facial_transformation_matrixes:
-            pose = _euler(resultado.facial_transformation_matrixes[0])
-            m["pitch"], m["yaw"], m["roll"] = (max(-90.0, min(90.0, v - b))
-                                               for v, b in zip(pose, self._base_pose))
-        m["simetria"] = simetria(m["sonrisa_izq"], m["sonrisa_der"], m["ear_izq"], m["ear_der"])
-        return m
+        return metricas_de(resultado, ancho, alto, previas, self._base_pose)
 
     def __iter__(self):
         import cv2
@@ -253,7 +264,7 @@ class SensorCamara:
             if self.motor:
                 for maq, est in self.motor.estado_actual().items():
                     lineas.append(f"{maq}: {est}")
-                activos = [g.nodo.nombre for g in self.motor.gestos if g.activo]
+                activos = self.motor.gestos_activos()
                 lineas.append("condiciones: " + (", ".join(activos) or "-"))
                 if self.motor.modulo.reps:
                     lineas.append(f"repeticiones: {len(self.motor.modulo.reps)}")

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="version" content="__VERSION__">
+  <meta name="description" content="EmoLang: terapia facial y detección de fatiga con la cámara de tu dispositivo. El video nunca sale de tu equipo.">
+  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1416" media="(prefers-color-scheme: dark)">
+  <title>EmoLang</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="estilos.css?v=__VERSION__">
+</head>
+<body>
+  <header class="barra">
+    <a class="marca" href="#" data-ir="inicio" aria-label="EmoLang, inicio">
+      <svg class="marca__logo" viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+      <span>EmoLang</span>
+    </a>
+    <div class="barra__derecha">
+      <div class="cuenta" id="cuenta" hidden>
+        <span class="cuenta__nombre" id="cuenta-nombre"></span>
+        <button class="boton boton--texto boton--chico" id="boton-salir">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============================================================ ACCESO -->
+    <section id="acceso" class="pantalla" hidden>
+      <div class="acceso">
+        <section class="galeria" id="galeria" aria-label="EmoLang: terapia facial, conducción y tecnología">
+          <div class="galeria__fila" data-grupo="rostros" data-sentido="derecha"></div>
+          <div class="galeria__fila" data-grupo="manejo" data-sentido="izquierda"></div>
+          <div class="galeria__fila" data-grupo="tecnologia" data-sentido="derecha"></div>
+        </section>
+        <div class="acceso__tarjeta">
+          <div class="pestanas" role="tablist">
+            <button role="tab" id="tab-entrar" aria-selected="true" aria-controls="form-entrar">Entrar</button>
+            <button role="tab" id="tab-registro" aria-selected="false" aria-controls="form-registro">Crear cuenta</button>
+          </div>
+
+          <form id="form-entrar" class="formulario" role="tabpanel" aria-labelledby="tab-entrar" novalidate>
+            <label class="campo"><span>Correo</span><input name="correo" type="email" autocomplete="email" required></label>
+            <label class="campo"><span>Contraseña</span><input name="contrasena" type="password" autocomplete="current-password" required></label>
+            <p class="formulario__error" role="alert" hidden></p>
+            <button class="boton boton--primario" type="submit">Entrar</button>
+          </form>
+
+          <form id="form-registro" class="formulario" role="tabpanel" aria-labelledby="tab-registro" novalidate hidden>
+            <fieldset class="roles">
+              <legend>Tipo de usuario</legend>
+              <label class="rol">
+                <input type="radio" name="rol" value="terapia" required>
+                <span class="rol__caja">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sonrisa"/></svg>
+                  <strong>Terapia facial</strong>
+                  <small>Rutina de ejercicios y simetría</small>
+                </span>
+              </label>
+              <label class="rol">
+                <input type="radio" name="rol" value="conductor" required>
+                <span class="rol__caja">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-volante"/></svg>
+                  <strong>Conductor</strong>
+                  <small>Detección de fatiga y alarmas</small>
+                </span>
+              </label>
+            </fieldset>
+            <label class="campo"><span>Nombre</span><input name="nombre" autocomplete="name" maxlength="80" required></label>
+            <label class="campo"><span>Correo</span><input name="correo" type="email" autocomplete="email" required></label>
+            <label class="campo"><span>Contraseña <small>(mínimo 8 caracteres)</small></span><input name="contrasena" type="password" autocomplete="new-password" minlength="8" required></label>
+            <label class="casilla">
+              <input type="checkbox" name="consentimiento" required>
+              <span>Acepto que se guarden mi nombre, mi correo y los resultados numéricos de mis sesiones. El video nunca se graba ni se envía. Puedo borrar mis datos cuando quiera.</span>
+            </label>
+            <p class="formulario__error" role="alert" hidden></p>
+            <button class="boton boton--primario" type="submit">Crear cuenta</button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ INICIO -->
+    <section id="inicio" class="pantalla" hidden>
+      <div class="intro">
+        <p class="intro__saludo" id="saludo"></p>
+        <h1 id="inicio-titulo">Tu panel</h1>
+        <p class="intro__texto" id="inicio-texto"></p>
+      </div>
+
+      <div class="tarjetas" id="estadisticas" hidden></div>
+
+      <div class="modulos">
+        <article class="modulo" data-modulo="terapia">
+          <div class="modulo__icono" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-sonrisa"/></svg></div>
+          <h2>Terapia facial</h2>
+          <p>Rutina guiada de tres ejercicios: sonreír, levantar las cejas y cerrar los ojos, cinco veces cada uno. Mide qué tan parejo se mueve cada lado de la cara.</p>
+          <ul class="modulo__datos">
+            <li>15 repeticiones · 3 a 5 minutos</li>
+            <li>Simetría izquierda / derecha</li>
+          </ul>
+          <div class="modulo__acciones">
+            <button class="boton boton--primario" data-iniciar="terapia">Comenzar rutina</button>
+            <button class="boton boton--texto" data-ver-programa="terapia">Ver programa</button>
+          </div>
+        </article>
+
+        <article class="modulo" data-modulo="conduccion">
+          <div class="modulo__icono modulo__icono--ambar" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-volante"/></svg></div>
+          <h2>Conducción</h2>
+          <p>Vigila señales de cansancio: ojos cerrados demasiado tiempo, bostezos, cabeceos y mirar a otro lado. Suena una alarma cuando hay riesgo.</p>
+          <ul class="modulo__datos">
+            <li>Microsueño, bostezo, cabeceo, distracción</li>
+            <li>PERCLOS: % del último minuto con ojos cerrados</li>
+          </ul>
+          <div class="modulo__acciones">
+            <button class="boton boton--primario" data-iniciar="conduccion">Comenzar monitoreo</button>
+            <button class="boton boton--texto" data-ver-programa="conduccion">Ver programa</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="opciones">
+        <label class="interruptor">
+          <input type="checkbox" id="opcion-voz" checked>
+          <span class="interruptor__pista" aria-hidden="true"></span>
+          <span>Guía por voz <small>(útil al cerrar los ojos)</small></span>
+        </label>
+        <div class="selector-voz" id="selector-voz" hidden>
+          <label for="opcion-voz-nombre">Voz</label>
+          <select id="opcion-voz-nombre"></select>
+          <button class="boton boton--texto boton--chico" id="probar-voz" type="button">Probar</button>
+        </div>
+      </div>
+
+      <section class="historial" id="historial">
+        <div class="historial__cabeza">
+          <h2 id="historial-titulo">Tus sesiones</h2>
+          <button class="boton boton--texto boton--chico" id="borrar-historial">Borrar mis sesiones</button>
+        </div>
+        <ul class="historial__lista" id="historial-lista"></ul>
+        <p class="historial__vacio" id="historial-vacio">Todavía no tienes sesiones guardadas.</p>
+      </section>
+
+      <p class="cuenta__borrar"><button class="boton boton--texto boton--chico" id="borrar-cuenta">Borrar mi cuenta y todos mis datos</button></p>
+
+      <p class="aviso">Prototipo académico del proyecto integrador de Lenguajes y Autómatas II (TecNM, Instituto Tecnológico de Oaxaca). El módulo de terapia es un apoyo para dar seguimiento a los ejercicios: no diagnostica ni sustituye a un profesional de la salud. El de conducción no sustituye el descanso.</p>
+    </section>
+
+    <!-- ============================================================ SESIÓN -->
+    <section id="sesion" class="pantalla" hidden>
+      <div class="sesion">
+        <div class="escenario" id="escenario">
+          <video id="video" playsinline muted></video>
+          <canvas id="lienzo" aria-hidden="true"></canvas>
+          <div class="escenario__capa" id="capa" hidden>
+            <div class="anillo" id="anillo" aria-hidden="true"></div>
+            <p id="capa-texto">Preparando…</p>
+          </div>
+          <div class="alarma" id="alarma" hidden role="alert">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alerta"/></svg>
+            <p id="alarma-texto"></p>
+          </div>
+          <div class="escenario__barra">
+            <span class="reloj" id="reloj">0:00</span>
+            <button class="boton-icono" id="boton-voz" aria-pressed="true" aria-label="Guía por voz">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-voz"/></svg>
+            </button>
+            <button class="boton-icono" id="boton-recalibrar" aria-label="Volver a calibrar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-recalibrar"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="instruccion" id="instruccion" aria-live="polite">Preparando…</div>
+
+          <!-- terapia -->
+          <div class="bloque" id="panel-terapia" hidden>
+            <ol class="ejercicios" id="ejercicios"></ol>
+          </div>
+
+          <!-- conducción -->
+          <div class="bloque" id="panel-conduccion" hidden>
+            <div class="estado-conductor" id="estado-conductor" data-estado="normal">
+              <span class="estado-conductor__punto" aria-hidden="true"></span>
+              <span id="estado-conductor-texto">Atento</span>
+            </div>
+            <dl class="contadores" id="contadores"></dl>
+          </div>
+
+          <div class="bloque">
+            <h3 class="bloque__titulo">En este momento</h3>
+            <div class="medidores" id="medidores"></div>
+          </div>
+
+          <div class="bloque" id="bloque-notas" hidden>
+            <h3 class="bloque__titulo">Notas de la sesión</h3>
+            <ul class="notas" id="notas"></ul>
+          </div>
+
+          <div class="panel__acciones">
+            <button class="boton boton--primario" id="boton-terminar">Terminar y ver resultados</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ RESULTADOS -->
+    <section id="resultados" class="pantalla" hidden>
+      <div class="resultados">
+        <div class="resultados__cabeza">
+          <p class="resultados__fecha" id="res-fecha"></p>
+          <h1 id="res-titulo">Resultados</h1>
+        </div>
+        <div class="tarjetas" id="res-tarjetas"></div>
+        <div id="res-detalle"></div>
+        <details class="bitacora">
+          <summary>Bitácora de eventos (<span id="res-n-eventos">0</span>)</summary>
+          <div class="tabla-desliza">
+            <table>
+              <thead><tr><th scope="col">Tiempo</th><th scope="col">Tipo</th><th scope="col">Detalle</th></tr></thead>
+              <tbody id="res-bitacora"></tbody>
+            </table>
+          </div>
+        </details>
+        <div class="resultados__acciones">
+          <button class="boton boton--primario" id="boton-csv">Descargar bitácora (CSV)</button>
+          <button class="boton boton--secundario" id="boton-otra">Otra sesión</button>
+          <button class="boton boton--texto" data-ir="inicio">Inicio</button>
+        </div>
+        <p class="aviso">Se guarda en tu cuenta un resumen numérico de la sesión y su bitácora; nunca el video.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="dialogo" id="dialogo-programa" aria-labelledby="dialogo-titulo">
+    <div class="dialogo__cabeza">
+      <h2 id="dialogo-titulo">Programa</h2>
+      <button class="boton-icono" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+    </div>
+    <p class="dialogo__nota">Este es el código EmoLang que el compilador traduce a autómatas y cuádruplas dentro de tu navegador.</p>
+    <pre class="codigo"><code id="dialogo-codigo"></code></pre>
+  </dialog>
+
+  <dialog class="dialogo" id="dialogo-error" aria-labelledby="error-titulo">
+    <div class="dialogo__cabeza">
+      <h2 id="error-titulo">No se pudo iniciar</h2>
+      <button class="boton-icono" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+    </div>
+    <p id="error-texto"></p>
+    <div class="dialogo__acciones"><button class="boton boton--primario" data-cerrar>Entendido</button></div>
+  </dialog>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="9" fill="currentColor"/><circle cx="11.5" cy="13" r="2.2" fill="#fff"/><path d="M19 13h4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M10 19.5c3.4 3.4 8.6 3.4 12 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-sonrisa" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10" r="1.2" fill="currentColor"/><circle cx="15" cy="10" r="1.2" fill="currentColor"/><path d="M8 14.5c2.2 2.4 5.8 2.4 8 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-volante" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 11h6.3M14.2 11h6.3M12 14.2V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-voz" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-recalibrar" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <script type="module" src="js/app.js?v=__VERSION__"></script>
+</body>
+</html>

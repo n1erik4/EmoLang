@@ -11,10 +11,10 @@ from .errores import Reporte
 
 PALABRAS_RESERVADAS = {
     # estructura
-    "dominio", "sensor", "var", "gesto", "secuencia", "maquina", "inicial",
-    "estado", "al_entrar", "cuando", "ignorar", "ir_a", "durante", "hasta", "tolerando", "en",
+    "dominio", "sensor", "usar", "var", "const", "funcion", "retornar", "estructura", "gesto", "secuencia", "maquina", "inicial",
+    "estado", "al_entrar", "cuando", "ignorar", "ir_a", "tras", "durante", "hasta", "tolerando", "en",
     # control
-    "si", "sino", "mientras", "repetir", "veces",
+    "si", "sino", "mientras", "repetir", "veces", "para",
     # tipos
     "int", "decimal", "bool", "string", "duracion", "proporcion",
     # literales y operadores lógicos
@@ -31,7 +31,7 @@ SIMBOLOS_SIMPLES = {
     "{": "LLAVE_IZQ", "}": "LLAVE_DER", "(": "PAR_IZQ", ")": "PAR_DER",
     "[": "COR_IZQ", "]": "COR_DER", ";": "PUNTO_COMA", ",": "COMA", ":": "DOS_PUNTOS",
     "=": "ASIGNACION", "<": "MENOR", ">": "MAYOR", "+": "MAS", "-": "MENOS",
-    "*": "POR", "/": "ENTRE", "%": "PORCIENTO",
+    "*": "POR", "/": "ENTRE", "%": "PORCIENTO", ".": "PUNTO",
 }
 
 

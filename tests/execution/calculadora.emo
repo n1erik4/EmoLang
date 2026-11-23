@@ -1,0 +1,30 @@
+// Calculadora: estructura, operaciones por código, decimales y conversión explícita.
+estructura Operacion {
+    codigo : int;
+    a : decimal;
+    b : decimal;
+}
+
+funcion calcular(codigo : int, a : decimal, b : decimal) : decimal {
+    si codigo == 1 { retornar a + b; }
+    sino si codigo == 2 { retornar a - b; }
+    sino si codigo == 3 { retornar a * b; }
+    sino si codigo == 4 { retornar a / b; }
+    retornar 0.0;
+}
+
+funcion resolver(op : Operacion) : decimal {
+    retornar calcular(op.codigo, op.a, op.b);
+}
+
+funcion principal() : int {
+    var op : Operacion;
+    op.a = 7.5;
+    op.b = 2.0;
+    para c = 1 hasta 4 {
+        op.codigo = c;
+        mostrar(c, resolver(op));
+    }
+    mostrar(a_int(7.9), a_decimal(3) / 2);
+    retornar 0;
+}

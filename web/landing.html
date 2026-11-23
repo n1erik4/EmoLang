@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="version" content="__VERSION__">
+  <meta name="description" content="EmoLang: terapia facial guiada y detección de fatiga al volante con la cámara de tu dispositivo. El video nunca sale de tu equipo.">
+  <meta name="theme-color" content="#0b3b38">
+  <title>EmoLang</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="landing.css?v=__VERSION__">
+</head>
+<body>
+  <!-- ============================================================ PORTADA -->
+  <header class="portada">
+    <nav class="nav contenedor" aria-label="Principal">
+      <a class="nav__marca" href="landing.html" aria-label="EmoLang, inicio">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+        <span>EmoLang</span>
+      </a>
+      <ul class="nav__enlaces">
+        <li><a href="#por-que">Por qué EmoLang</a></li>
+        <li><a href="#modulos">Módulos</a></li>
+        <li><a href="#como-funciona">Cómo funciona</a></li>
+      </ul>
+      <details class="nav__menu">
+        <summary aria-label="Abrir menú">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </summary>
+        <ul>
+          <li><a href="#por-que">Por qué EmoLang</a></li>
+          <li><a href="#modulos">Módulos</a></li>
+          <li><a href="#como-funciona">Cómo funciona</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <div class="portada__contenido contenedor">
+      <h1>Tu rostro, acompañado en cada movimiento</h1>
+      <p class="portada__sub">Terapia facial guiada y detección de fatiga al volante con la cámara de tu dispositivo</p>
+      <a class="boton-cta" href="./">
+        Comenzar ahora
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============================================================ GESTOS -->
+    <section class="gestos contenedor" aria-labelledby="gestos-titulo">
+      <div class="gestos__tarjeta">
+        <h2 id="gestos-titulo">Reconocemos lo que tu <span class="resalte">rostro</span> expresa</h2>
+        <p class="gestos__sub">Gestos que EmoLang detecta en tiempo real con MediaPipe y traduce a autómatas finitos</p>
+
+        <div class="carrusel" id="carrusel">
+          <ul class="carrusel__pista">
+            <li><svg aria-hidden="true"><use href="#g-sonrisa"/></svg><span>Sonrisa</span></li>
+            <li><svg aria-hidden="true"><use href="#g-cejas"/></svg><span>Cejas levantadas</span></li>
+            <li><svg aria-hidden="true"><use href="#g-ojos"/></svg><span>Ojos cerrados</span></li>
+            <li><svg aria-hidden="true"><use href="#g-simetria"/></svg><span>Simetría facial</span></li>
+            <li><svg aria-hidden="true"><use href="#g-parpadeo"/></svg><span>Parpadeo</span></li>
+            <li><svg aria-hidden="true"><use href="#g-microsueno"/></svg><span>Microsueño</span></li>
+            <li><svg aria-hidden="true"><use href="#g-bostezo"/></svg><span>Bostezo</span></li>
+            <li><svg aria-hidden="true"><use href="#g-cabeceo"/></svg><span>Cabeceo</span></li>
+            <li><svg aria-hidden="true"><use href="#g-distraccion"/></svg><span>Distracción</span></li>
+            <li><svg aria-hidden="true"><use href="#g-perclos"/></svg><span>PERCLOS</span></li>
+            <li><svg aria-hidden="true"><use href="#g-automata"/></svg><span>Autómatas finitos</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ POR QUÉ -->
+    <section class="porque contenedor" id="por-que" aria-labelledby="porque-titulo">
+      <figure class="porque__foto">
+        <img src="img/galeria/rostros_07.jpg" alt="Una profesional de la salud acompaña a una paciente" width="468" height="312" loading="lazy">
+        <figcaption class="porque__sello"><strong>100 %</strong><span>en tu dispositivo</span></figcaption>
+      </figure>
+      <div class="porque__texto">
+        <h2 id="porque-titulo">¿Por qué EmoLang?</h2>
+        <p>EmoLang es un lenguaje de programación hecho para describir gestos del rostro. Cada ejercicio y cada señal de fatiga se escriben como un programa, y el compilador los convierte en autómatas finitos que revisan la cámara cuadro por cuadro.</p>
+        <p>Cada ejercicio se mide contra el esfuerzo máximo de cada persona: si una sonrisa ligera es lo más que alguien puede hacer hoy, cuenta. Una voz guía la rutina y espera a que termines cada indicación.</p>
+        <p>La cámara se procesa dentro de tu navegador. El video nunca se graba ni se envía: solo se guardan los números de tus sesiones, y puedes borrarlos cuando quieras.</p>
+        <a class="boton-cta" href="./">
+          Comenzar ahora
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============================================================ MÓDULOS -->
+    <section class="modulos" id="modulos" aria-labelledby="modulos-titulo">
+      <div class="contenedor">
+        <header class="encabezado">
+          <h2 id="modulos-titulo">Nuestros <span class="resalte">módulos</span></h2>
+          <p>Dos módulos sobre el mismo compilador: uno para rehabilitar y otro para prevenir.</p>
+        </header>
+        <div class="modulos__lista">
+          <article class="modulo">
+            <img src="img/galeria/rostros_08.jpg" alt="Mujer sonriendo frente a la cámara" width="468" height="312" loading="lazy">
+            <div class="modulo__cuerpo">
+              <h3>Terapia facial</h3>
+              <p>Rutina guiada para sonreír, levantar las cejas y cerrar los ojos, cinco veces cada uno, midiendo la simetría de cada lado.</p>
+            </div>
+          </article>
+          <article class="modulo">
+            <img src="img/galeria/manejo_01.jpg" alt="Persona manejando un automóvil" width="468" height="312" loading="lazy">
+            <div class="modulo__cuerpo">
+              <h3>Conducción segura</h3>
+              <p>Detecta microsueños, bostezos, cabeceos y distracciones mientras manejas, y suena una alarma a tiempo.</p>
+            </div>
+          </article>
+          <article class="modulo">
+            <img src="img/galeria/tecnologia_03.jpg" alt="Mano sosteniendo un celular" width="468" height="312" loading="lazy">
+            <div class="modulo__cuerpo">
+              <h3>En cualquier dispositivo</h3>
+              <p>Funciona en celular, tablet o computadora desde el navegador, sin instalar nada.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CÓMO FUNCIONA -->
+    <section class="pasos contenedor" id="como-funciona" aria-labelledby="pasos-titulo">
+      <header class="encabezado">
+        <h2 id="pasos-titulo">Así <span class="resalte">funciona</span></h2>
+        <p>Tres pasos, con la cámara que ya tienes.</p>
+      </header>
+      <ol class="pasos__lista">
+        <li class="paso">
+          <div class="paso__foto">
+            <img src="img/galeria/tecnologia_05.jpg" alt="Computadora y celular sobre una mesa" width="468" height="312" loading="lazy">
+            <span class="paso__etiqueta">Paso 1</span>
+          </div>
+          <h3>Calibra en dos segundos</h3>
+          <p>Mira al frente y no te muevas: EmoLang aprende cómo es tu rostro en reposo.</p>
+        </li>
+        <li class="paso">
+          <div class="paso__foto">
+            <img src="img/galeria/rostros_04.jpg" alt="Joven sonriendo" width="467" height="312" loading="lazy">
+            <span class="paso__etiqueta">Paso 2</span>
+          </div>
+          <h3>Sigue la voz</h3>
+          <p>Haz cada ejercicio cuando la voz termine la indicación; el contador avanza solo.</p>
+        </li>
+        <li class="paso">
+          <div class="paso__foto">
+            <img src="img/galeria/tecnologia_07.jpg" alt="Mujer revisando su celular" width="468" height="312" loading="lazy">
+            <span class="paso__etiqueta">Paso 3</span>
+          </div>
+          <h3>Revisa tu avance</h3>
+          <p>Al terminar ves tus repeticiones y tu simetría, y cada sesión queda guardada en tu cuenta.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ LLAMADO -->
+    <section class="llamado contenedor" aria-labelledby="llamado-titulo">
+      <div class="llamado__texto">
+        <p class="llamado__previo">Desde tu navegador, sin instalar nada</p>
+        <h2 id="llamado-titulo">Empieza hoy tu primera sesión</h2>
+        <a class="boton-cta" href="./">
+          Comenzar ahora
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <img class="llamado__foto" src="img/galeria/rostros_03.jpg" alt="" width="470" height="312" loading="lazy">
+    </section>
+  </main>
+
+  <!-- ============================================================ PIE -->
+  <footer class="pie">
+    <div class="pie__columnas contenedor">
+      <div class="pie__marca">
+        <a class="nav__marca" href="landing.html" aria-label="EmoLang, inicio">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#logo"/></svg>
+          <span>EmoLang</span>
+        </a>
+        <p>Terapia facial y detección de fatiga con la cámara de tu dispositivo. El video nunca sale de tu equipo.</p>
+      </div>
+      <nav aria-labelledby="pie-enlaces">
+        <h2 id="pie-enlaces">Enlaces</h2>
+        <ul>
+          <li><a href="#por-que">Por qué EmoLang</a></li>
+          <li><a href="#modulos">Módulos</a></li>
+          <li><a href="#como-funciona">Cómo funciona</a></li>
+          <li><a href="./">Entrar a la aplicación</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h2>Módulos</h2>
+        <ul>
+          <li>Terapia facial</li>
+          <li>Conducción segura</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacidad</h2>
+        <ul>
+          <li>El video no se graba ni se envía</li>
+          <li>Solo se guardan los números de tus sesiones</li>
+          <li>Borra tus datos cuando quieras</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie__final contenedor">
+      <p>© 2026 EmoLang. Todos los derechos reservados.</p>
+      <p>Herramienta de apoyo; no sustituye el diagnóstico médico.</p>
+    </div>
+  </footer>
+
+  <!-- ============================================================ ÍCONOS -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="9" fill="currentColor"/><circle cx="11.5" cy="13" r="2.2" fill="#fff"/><path d="M19 13h4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M10 19.5c3.4 3.4 8.6 3.4 12 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <!-- Gestos: trazo de 2 px sobre 48 × 48, como la referencia -->
+    <symbol id="g-sonrisa" viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle fill="currentColor" stroke="none" cx="18" cy="20" r="1.6"/><circle fill="currentColor" stroke="none" cx="30" cy="20" r="1.6"/><path d="M15.5 27c4.5 6 12.5 6 17 0"/></symbol>
+    <symbol id="g-cejas" viewBox="0 0 48 48"><circle cx="24" cy="26" r="15"/><path d="M14 15.5c2.2-2.6 5.4-2.8 7.6-.8M26.4 14.7c2.2-2 5.4-1.8 7.6.8"/><circle fill="currentColor" stroke="none" cx="18" cy="22.5" r="1.6"/><circle fill="currentColor" stroke="none" cx="30" cy="22.5" r="1.6"/><ellipse cx="24" cy="32" rx="2.6" ry="3"/><path d="M24 3v5M20 5l4-3 4 3"/></symbol>
+    <symbol id="g-ojos" viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><path d="M14.5 21c1.8 2 5 2 6.8 0M26.7 21c1.8 2 5 2 6.8 0"/><path d="M15.6 22.6l-1.3 1.6M18 23.4l-.4 2M32.4 22.6l1.3 1.6M30 23.4l.4 2"/><path d="M19.5 31.5h9"/></symbol>
+    <symbol id="g-simetria" viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><path d="M24 4v40" stroke-dasharray="2.5 3"/><circle fill="currentColor" stroke="none" cx="17.5" cy="20" r="1.6"/><circle fill="currentColor" stroke="none" cx="30.5" cy="20" r="1.6"/><path d="M16 28c4.2 4.6 11.8 4.6 16 0"/><path d="M8 40l-3-3 3-3M40 40l3-3-3-3"/></symbol>
+    <symbol id="g-parpadeo" viewBox="0 0 48 48"><path d="M5 25c5.5-8 12-12 19-12s13.5 4 19 12c-5.5 8-12 12-19 12s-13.5-4-19-12Z"/><path d="M7.5 21.5C13 15.5 18.4 13 24 13s11 2.5 16.5 8.5"/><path d="M8 24.5h32"/><path d="M12 27.5l-2 3.5M18 29.5l-1 4M24 30v4M30 29.5l1 4M36 27.5l2 3.5"/></symbol>
+    <symbol id="g-microsueno" viewBox="0 0 48 48"><circle cx="21" cy="28" r="14"/><path d="M12.5 26c1.6 1.8 4.4 1.8 6 0M23.5 26c1.6 1.8 4.4 1.8 6 0"/><path d="M17 34.5h8"/><path d="M31 5h7l-7 8h7M39.5 15h4.5l-4.5 5h4.5"/></symbol>
+    <symbol id="g-bostezo" viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><path d="M15 18.5c1.8 1.6 4.6 1.6 6.4 0M26.6 18.5c1.8 1.6 4.6 1.6 6.4 0"/><ellipse cx="24" cy="30" rx="5" ry="6.5"/><path d="M38 11c2.2-1 3.6-.6 4.6 1M40 6c3-1.2 5-.4 6 2"/></symbol>
+    <symbol id="g-cabeceo" viewBox="0 0 48 48"><path d="M18 9.5c8-2.6 17 2 19 10.5 1.8 7.8-3.4 14-9.6 15.4L28 41H14.5v-7.4C9 30.8 7 24.4 9.2 18.6"/><path d="M26 20.5c1.4 1.4 3.6 1.4 5 0"/><path d="M5 13c-.6 4 .4 7.6 3 10.6M5.6 23.8 8 23.6l.2-2.6"/></symbol>
+    <symbol id="g-distraccion" viewBox="0 0 48 48"><path d="M30 8.5C21.6 6.6 13 12 12 21c-.8 7 3.4 12 8.8 13.6V41H34v-7.6c3.6-2.4 5.6-6.4 5.6-10.6"/><path d="M14.6 20.5c1.2-1 3-1 4.2 0"/><path d="M33 14h11M40 10l4 4-4 4"/></symbol>
+    <symbol id="g-perclos" viewBox="0 0 48 48"><circle cx="24" cy="26" r="16"/><path d="M24 4v6M20 4h8M37 12l3-3"/><path d="M14 27c5.5-6 14.5-6 20 0-5.5 6-14.5 6-20 0Z"/><circle fill="currentColor" stroke="none" cx="24" cy="27" r="2.2"/></symbol>
+    <symbol id="g-automata" viewBox="0 0 48 48"><circle cx="10" cy="24" r="5.5"/><circle cx="38" cy="24" r="5.5"/><circle cx="38" cy="24" r="3"/><circle cx="24" cy="11" r="5.5"/><path d="M14.4 20.6 19.6 14.4M28.4 14.6l5.2 5.8M15.5 24h17M30.6 21.2l2 2.8-3 1.8M31 26l1.7-2-2.3-1.6"/><path d="M1 24h3.5M2.8 22.2 4.5 24l-1.7 1.8"/></symbol>
+  </svg>
+
+  <script type="module" src="js/landing.js?v=__VERSION__"></script>
+</body>
+</html>
