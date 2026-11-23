@@ -4,17 +4,17 @@
 dominio rehabilitacion {
 
     sensor camara {
-        usar sonrisa, simetria;
+        usar sonrisa, sonrisa_rel, simetria;
         var fps : int = 30;
     }
 
     var meta             : int        = 8;
-    var umbral_sonrisa   : proporcion = 40%;
+    var umbral_sonrisa   : proporcion = 60%;   // de la sonrisa máxima de la persona (perfil.py)
     var umbral_reposo    : proporcion = 0.15;
     var simetria_minima  : proporcion = 80%;
     var sostener         : duracion   = 500 ms;
 
-    gesto sonreir = sonrisa > umbral_sonrisa durante sostener tolerando 100 ms;
+    gesto sonreir = sonrisa_rel > umbral_sonrisa durante sostener tolerando 100 ms;
     gesto reposo  = sonrisa < umbral_reposo  durante 300 ms;
 
     maquina ejercicio inicial preparacion {

@@ -22,21 +22,28 @@ async function api(metodo, ruta, datos) {
   }
   let cuerpo = null;
   try { cuerpo = await r.json(); } catch { /* sin cuerpo */ }
-  if (!r.ok) throw new ErrorApi(r.status, cuerpo?.error || `Error ${r.status}`);
+  if (!r.ok) {
+    const e = new ErrorApi(r.status, cuerpo?.error || MENSAJES[r.status] || `Error ${r.status} del servidor.`);
+    // 401 fuera del inicio de sesión = la sesión expiró o se cerró en otro lado.
+    if (r.status === 401 && ruta !== "entrar") window.dispatchEvent(new CustomEvent("sesion-expirada"));
+    throw e;
+  }
   return cuerpo;
 }
+
+const MENSAJES = {
+  400: "Los datos enviados no son válidos.",
+  401: "Tu sesión expiró o se cerró. Vuelve a iniciar sesión.",
+  403: "Tu tipo de usuario no tiene permiso para esto.",
+  404: "No se encontró lo que se pidió al servidor.",
+  500: "El servidor tuvo un error. Intenta de nuevo en un momento.",
+};
 
 // El rol decide qué módulo puede usar la persona.
 export const MODULO_DE_ROL = { terapia: "terapia", conductor: "conduccion" };
 
-export const yo = async () => {
-  try {
-    return await api("GET", "yo");
-  } catch (e) {
-    if (e.estado === 401) return null;
-    throw e;
-  }
-};
+// Devuelve null si no hay sesión iniciada.
+export const yo = () => api("GET", "yo");
 export const entrar = (correo, contrasena) => api("POST", "entrar", { correo, contrasena });
 export const registrar = (datos) => api("POST", "registro", datos);
 export const salir = () => api("POST", "salir", {});
@@ -45,4 +52,7 @@ export const guardarSesion = (reg) => api("POST", "sesiones", {
   modulo: reg.modulo, fecha: reg.fecha, simetria_minima: reg.simetria_minima, resultado: reg.r,
 });
 export const borrarSesiones = () => api("DELETE", "sesiones");
+// Esfuerzo máximo de la persona en cada ejercicio (terapia): se mide contra él.
+export const perfil = () => api("GET", "perfil");
+export const guardarPerfil = (datos) => api("PUT", "perfil", datos);
 export const borrarCuenta = () => api("DELETE", "cuenta");

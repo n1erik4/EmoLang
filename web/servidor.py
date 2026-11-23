@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     sal               BLOB NOT NULL,
     rol               TEXT NOT NULL CHECK (rol IN ('terapia', 'conductor')),
     consentimiento_en TEXT NOT NULL,
-    creado_en         TEXT NOT NULL
+    creado_en         TEXT NOT NULL,
+    perfil            TEXT              -- JSON (terapia): esfuerzo máximo de la persona en cada ejercicio
 );
 CREATE TABLE IF NOT EXISTS tokens (
     hash        TEXT PRIMARY KEY,
@@ -94,6 +95,9 @@ class Base:
         self.con.row_factory = sqlite3.Row
         self.con.execute("PRAGMA foreign_keys = ON")
         self.con.executescript(ESQUEMA)
+        columnas = {f["name"] for f in self.con.execute("PRAGMA table_info(usuarios)")}
+        if "perfil" not in columnas:            # bases creadas antes de guardar la sonrisa máxima
+            self.con.execute("ALTER TABLE usuarios ADD COLUMN perfil TEXT")
         self.con.commit()
 
     def ejecutar(self, sql, params=()):
@@ -184,6 +188,31 @@ class Servicio:
     def salir(self, token):
         if token:
             self.db.ejecutar("DELETE FROM tokens WHERE hash = ?", (_hash_token(token),))
+
+    # ---------------------------------------------------------------- perfil (terapia)
+    # El esfuerzo máximo de la persona en cada ejercicio (emolang/perfil.py): números, no imágenes.
+    CLAVES_PERFIL = ("sonrisa_maxima", "cejas_maxima", "ojos_maxima")
+
+    def perfil(self, u):
+        guardado = json.loads(u["perfil"]) if u["perfil"] else {}
+        return {k: guardado.get(k, 0.0) for k in self.CLAVES_PERFIL}
+
+    def guardar_perfil(self, u, datos):
+        if u["rol"] != "terapia":
+            raise ErrorApi(403, "Solo las cuentas de terapia guardan su esfuerzo máximo.")
+        if not isinstance(datos, dict) or not datos or set(datos) - set(self.CLAVES_PERFIL):
+            raise ErrorApi(400, "Perfil inválido.")
+        perfil = self.perfil(u)
+        for k, v in datos.items():
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                raise ErrorApi(400, "Perfil inválido.") from None
+            if not 0.0 <= v <= 1.0:
+                raise ErrorApi(400, "Perfil inválido.")
+            perfil[k] = v
+        self.db.ejecutar("UPDATE usuarios SET perfil = ? WHERE id = ?", (json.dumps(perfil), u["id"]))
+        return perfil
 
     # ---------------------------------------------------------------- sesiones
     def guardar_sesion(self, u, datos):
@@ -287,14 +316,21 @@ def manejador(servicio, dist, seguro):
         def _usuario(self):
             u = servicio.usuario_de(self._token())
             if not u:
-                raise ErrorApi(401, "Inicie sesión.")
+                raise ErrorApi(401, "Tu sesión expiró o se cerró. Vuelve a iniciar sesión.")
             return u
 
         def _api(self, metodo):
             ruta = urlparse(self.path).path
             try:
                 if metodo == "GET" and ruta == "/api/yo":
-                    return self._json(200, usuario_publico(self._usuario()))
+                    # Sin sesión no es un error: la página solo muestra el acceso.
+                    u = servicio.usuario_de(self._token())
+                    return self._json(200, usuario_publico(u) if u else None)
+                if metodo == "GET" and ruta == "/api/perfil":
+                    return self._json(200, servicio.perfil(self._usuario()))
+                if metodo == "PUT" and ruta == "/api/perfil":
+                    u = self._usuario()
+                    return self._json(200, servicio.guardar_perfil(u, self._leer()))
                 if metodo == "GET" and ruta == "/api/sesiones":
                     return self._json(200, servicio.sesiones(self._usuario()))
                 if metodo == "POST" and ruta == "/api/registro":
@@ -329,6 +365,9 @@ def manejador(servicio, dist, seguro):
 
         def do_POST(self):
             self._api("POST")
+
+        def do_PUT(self):
+            self._api("PUT")
 
         def do_DELETE(self):
             self._api("DELETE")

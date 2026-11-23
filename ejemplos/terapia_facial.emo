@@ -5,22 +5,22 @@
 dominio terapia_facial {
 
     sensor camara {
-        usar sonrisa, cejas, ear, simetria_sonrisa, simetria_cejas, simetria_ojos;
+        usar sonrisa, sonrisa_rel, cejas_rel, ojos_rel, simetria_sonrisa, simetria_cejas, simetria_ojos;
         var fps : int = 30;
     }
 
     // Los configura la persona terapeuta según las capacidades del paciente.
     var meta            : int        = 5;
-    var umbral_sonrisa  : proporcion = 40%;
-    var umbral_cejas    : proporcion = 50%;
-    var umbral_ojos     : proporcion = 0.15;
+    var umbral_sonrisa  : proporcion = 60%;   // de la sonrisa máxima de la persona (perfil.py)
+    var umbral_cejas    : proporcion = 60%;   // de la subida máxima de cejas de la persona
+    var umbral_ojos     : proporcion = 70%;   // de lo más que la persona cierra los ojos
     var simetria_minima : proporcion = 80%;
     var hechas          : int        = 0;
 
-    gesto sonreir      = sonrisa > umbral_sonrisa durante 500 ms tolerando 100 ms;
-    gesto elevar_cejas = cejas > umbral_cejas     durante 500 ms tolerando 100 ms;
-    gesto cerrar_ojos  = ear < umbral_ojos        durante 800 ms tolerando 100 ms;
-    gesto reposo       = sonrisa < 15% y cejas < 35% y ear > 0.20 durante 300 ms;
+    gesto sonreir      = sonrisa_rel > umbral_sonrisa durante 500 ms tolerando 100 ms;
+    gesto elevar_cejas = cejas_rel > umbral_cejas     durante 500 ms tolerando 100 ms;
+    gesto cerrar_ojos  = ojos_rel > umbral_ojos        durante 800 ms tolerando 100 ms;
+    gesto reposo       = sonrisa < 15% y cejas_rel < 25% y ojos_rel < 25% durante 300 ms;
 
     maquina rutina inicial preparacion {
 

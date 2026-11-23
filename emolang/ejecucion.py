@@ -45,14 +45,17 @@ def regularizar(fuente, fps):
 
 
 def ejecutar(resultado, dominio, sensor, tiempo_real=False, sonido=False, verbose=True,
-             al_cuadro=None, ocultar=("parpadeo",), emoc=None):
-    """Ejecuta el programa en EmoVM. `emoc` permite indicar otro programa compilado."""
+             al_cuadro=None, ocultar=("parpadeo",), emoc=None, perfil=None):
+    """Ejecuta el programa en EmoVM. `emoc` permite indicar otro programa compilado.
+    `perfil` (perfil.Perfil) trae la sonrisa máxima de sesiones anteriores."""
     def salida(texto):
         if verbose and not any(texto.rstrip().endswith(f"gesto      {o}") for o in ocultar):
             print(texto)
 
     modulo = modulo_para(dominio, sonido=sonido, salida=salida)
     motor = EmoVM(emoc or resultado.emoc, dominio, modulo)
+    if perfil is not None:
+        motor.perfil = perfil
     if hasattr(sensor, "motor"):
         sensor.motor = motor   # la cámara dibuja el estado del motor sobre el video
 

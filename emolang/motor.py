@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from . import nodos as N
 from .errores import ErrorEmoLang
 from .metricas import metricas_neutras
+from .perfil import Perfil
 from .tipos import texto_valor
 
 MAX_ENCADENAMIENTO = 32
@@ -67,6 +68,7 @@ class Motor:
         self.eventos_cuadro = []
         self.cuadro_n = 0
         self._perclos = deque()
+        self.perfil = Perfil()      # sonrisa máxima de la persona (sonrisa_rel)
         self._iniciado = False
         self._mq = None
 
@@ -96,7 +98,7 @@ class Motor:
         """Procesa un cuadro. Devuelve la lista de eventos emitidos."""
         self.t = t_ms
         self.cuadro_n += 1
-        self.metricas = dict(metricas)
+        self.metricas = self.perfil.derivar(metricas, t_ms)
         self._actualizar_perclos()
         self.modulo.cuadro(t_ms, self.metricas)
 

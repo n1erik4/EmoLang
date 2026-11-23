@@ -13,11 +13,12 @@ from .compilador import compilar
 from .intermedio import PROGRAMA
 from .metricas import metricas_neutras
 from .modulos import clase_dominio, modulo_para
+from .perfil import Perfil
 from .vm import EmoVM
 
 
 class SesionWeb:
-    def __init__(self, fuente, dominio=None):
+    def __init__(self, fuente, dominio=None, perfil=None):
         r = compilar(fuente)
         if not r.ok:
             raise ValueError("; ".join(str(d) for d in r.reporte.errores))
@@ -40,6 +41,8 @@ class SesionWeb:
 
         self.modulo.mostrar, self.modulo.registrar = mostrar_web, registrar_web
         self.vm = EmoVM(r.emoc, self.dominio, self.modulo)
+        # sonrisa máxima guardada en la cuenta (perfil.py)
+        self.vm.perfil = Perfil.desde_dict(json.loads(perfil) if isinstance(perfil, str) else perfil)
         self.periodo = 1000.0 / self.vm.fps
         self.k = 0
         self.ultimas = metricas_neutras()
@@ -84,7 +87,11 @@ class SesionWeb:
             "ejercicios": {n: [round(s, 4) for s in v] for n, v in mod.ejercicios.items()},
             "repeticiones": len(mod.reps),
             "perclos": round(self.vm.metricas.get("perclos", 0.0), 4),
+            **{k: round(float(self.vm.metricas.get(k, 0.0)), 4) for k in ("sonrisa_rel", "cejas_rel", "ojos_rel")},
         }
+
+    def perfil(self):
+        return json.dumps(self.vm.perfil.a_dict())
 
     # ------------------------------------------------------------------ cierre
     def terminar(self):
@@ -104,5 +111,5 @@ class SesionWeb:
                            "configuracion": self.configuracion}, ensure_ascii=False)
 
 
-def nueva_sesion(fuente):
-    return SesionWeb(fuente)
+def nueva_sesion(fuente, perfil=None):
+    return SesionWeb(fuente, perfil=perfil)

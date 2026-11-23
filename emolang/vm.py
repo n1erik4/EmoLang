@@ -12,6 +12,7 @@ from collections import deque
 from .errores import ErrorEmoLang
 from .intermedio import MAX_REPETIR, es_temporal
 from .metricas import metricas_neutras
+from .perfil import Perfil
 from .optimizador import calcular
 
 MAX_ENCADENAMIENTO = 32
@@ -81,6 +82,7 @@ class EmoVM:
         self.mem = {}
         self._eventos = []
         self._perclos = deque()
+        self.perfil = Perfil()      # sonrisa máxima de la persona (sonrisa_rel)
         self._iniciado = False
         self._mq = None
         self.bloques = {n: [(c[0], _decodificar(c[1]), _decodificar(c[2]), c[3], c[4]) for c in b]
@@ -109,7 +111,7 @@ class EmoVM:
         """Procesa un cuadro. Devuelve la lista de eventos emitidos."""
         self.t = t_ms
         self.cuadro_n += 1
-        self.metricas = dict(metricas)
+        self.metricas = self.perfil.derivar(metricas, t_ms)
         self._actualizar_perclos()
         self.modulo.cuadro(t_ms, self.metricas)
 

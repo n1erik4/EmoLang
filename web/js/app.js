@@ -1,7 +1,9 @@
 // Interfaz de EmoLang: inicio, sesión con cámara y resultados.
 import { iniciarGaleria } from "./carrusel.js";
 import { abrirCamara, cadaCuadro, cargarDetector, cerrarCamara, ErrorCamara } from "./camara.js";
-import { callar, decir, desbloquear, mantenerPantalla, pitido, soltarPantalla } from "./avisos.js";
+import {
+  callar, decir, desbloquear, estaHablando, mantenerPantalla, pitido, soltarPantalla, usarVoz, vocesEnEspanol, vozActual,
+} from "./avisos.js";
 import { crearSesion, cargarMotor, leerPrograma } from "./motor.js";
 import * as cuenta from "./cuenta.js";
 import { BOCA_H, BOCA_V, Calibrador, metricasDe, NEUTRAS, OJO_DER, OJO_IZQ } from "./rostro.js";
@@ -24,10 +26,13 @@ const MODULOS = {
       { clave: "ojos", nombre: "Cerrar los ojos" },
     ],
     medidores: (cfg) => [
-      { nombre: "Sonrisa", valor: (m) => m.sonrisa, umbral: cfg.umbral_sonrisa ?? 0.4, gesto: "sonreir", texto: (m) => pct.format(m.sonrisa) },
-      { nombre: "Cejas levantadas", valor: (m) => m.cejas, umbral: cfg.umbral_cejas ?? 0.5, gesto: "elevar_cejas", texto: (m) => pct.format(m.cejas) },
-      { nombre: "Apertura de los ojos", valor: (m) => m.ear / 0.4, umbral: (cfg.umbral_ojos ?? 0.15) / 0.4, gesto: "cerrar_ojos",
-        texto: (m) => m.ear.toFixed(2), nota: "Con los ojos cerrados la barra queda antes de la marca." },
+      // cada barra: el movimiento respecto del máximo de la persona (emolang/perfil.py)
+      { nombre: "Sonrisa", valor: (m, e) => e?.sonrisa_rel ?? 0, umbral: cfg.umbral_sonrisa ?? 0.6, gesto: "sonreir",
+        texto: (m, e) => pct.format(e?.sonrisa_rel ?? 0) },
+      { nombre: "Cejas levantadas", valor: (m, e) => e?.cejas_rel ?? 0, umbral: cfg.umbral_cejas ?? 0.6, gesto: "elevar_cejas",
+        texto: (m, e) => pct.format(e?.cejas_rel ?? 0) },
+      { nombre: "Ojos cerrados", valor: (m, e) => e?.ojos_rel ?? 0, umbral: cfg.umbral_ojos ?? 0.7, gesto: "cerrar_ojos",
+        texto: (m, e) => pct.format(e?.ojos_rel ?? 0) },
     ],
   },
   conduccion: {
@@ -132,6 +137,48 @@ try { if (localStorage.getItem("emolang.voz") === "0") voz.activa = false; } cat
 $("#opcion-voz").addEventListener("change", (e) => { voz.activa = e.target.checked; });
 $("#boton-voz").addEventListener("click", () => { voz.activa = !voz.activa; });
 
+// Selector de voz: la lista llega tarde en Chrome (evento voiceschanged).
+function llenarVoces() {
+  const voces = vocesEnEspanol();
+  const caja = $("#selector-voz");
+  caja.hidden = voces.length < 2;
+  const sel = $("#opcion-voz-nombre");
+  const actual = vozActual();
+  sel.replaceChildren(...voces.map((v, i) => {
+    const op = document.createElement("option");
+    op.value = v.name;
+    op.textContent = `${v.name} (${v.lang})${i === 0 ? " · recomendada" : ""}`;
+    op.selected = v.name === actual;
+    return op;
+  }));
+}
+if ("speechSynthesis" in window) {
+  llenarVoces();
+  speechSynthesis.addEventListener?.("voiceschanged", llenarVoces);
+}
+$("#opcion-voz-nombre").addEventListener("change", (e) => { usarVoz(e.target.value); probarVoz(); });
+$("#probar-voz").addEventListener("click", probarVoz);
+function probarVoz() {
+  desbloquear({ hablar: false });
+  decir("Hola. Repetición 3 de 8. Simetría 85 por ciento.", { urgente: true });
+}
+
+const esConteo = (texto) => /\d+ de \d+/.test(texto);
+
+// Qué se dice en voz alta de cada mensaje del programa:
+// - una instrucción solo cuando cambia: «Sonría y sostenga» vuelve a aparecer en
+//   pantalla después de cada repetición, pero decirla cada vez solo atrasa la voz;
+// - un conteo, corto: «Sonrisa 3 de 5 - simetría 85.3%» → «3 de 5. Simetría 85 por ciento»
+//   (el nombre del ejercicio ya está en pantalla).
+function decirMensaje(ses, texto) {
+  if (esConteo(texto)) {
+    hablar(texto.replace(/^\D*?(?=\d+ de \d+)/, ""), { conteo: true });
+  } else if (texto !== ses.ultimaInstruccion) {
+    ses.ultimaInstruccion = texto;
+    hablar(texto);
+  }
+}
+
 function hablar(texto, opciones) {
   if (voz.activa) decir(texto, opciones);
 }
@@ -157,7 +204,8 @@ async function iniciarSesion(clave) {
   let flujo = null;
   try {
     const camara = abrirCamara(video).then((f) => { flujo = f; capa("Cargando el compilador y el detector facial…"); return f; });
-    const [s, detector] = await Promise.all([crearSesion(mod.programa), cargarDetector(), camara]);
+    const perfil = clave === "terapia" ? await cuenta.perfil().catch(() => null) : null;
+    const [s, detector] = await Promise.all([crearSesion(mod.programa, perfil), cargarDetector(), camara]);
     lienzo.width = video.videoWidth;
     lienzo.height = video.videoHeight;
     sesion = {
@@ -203,6 +251,11 @@ function alCuadro(ahora) {
     return;
   }
   dibujar(res);
+
+  // Terapia: el ejercicio espera a que la voz termine (la indicación de calibrar, la
+  // instrucción de cada ejercicio y el resultado de cada repetición). El tiempo en
+  // espera no cuenta, igual que con la pestaña oculta. Conducción nunca se pausa.
+  if (esperaVoz(ses, ahora)) return;
 
   if (!ses.calibrador.listo) {
     const c = ses.calibrador.agregar(res, ahora);
@@ -275,8 +328,9 @@ function terminarSesion({ mostrar = true } = {}) {
   soltarPantalla();
   callar();
   $("#alarma").hidden = true;
-  let r;
+  let r, perfil = null;
   try {
+    if (ses.clave === "terapia") perfil = ses.s.perfil();
     r = ses.s.terminar();
   } catch (e) {
     console.error(e);
@@ -284,8 +338,11 @@ function terminarSesion({ mostrar = true } = {}) {
     return;
   }
   const registro = { id: Date.now(), fecha: ses.inicio.toISOString(), modulo: ses.clave, simetria_minima: ses.cfg.simetria_minima ?? SIMETRIA_MINIMA, r };
-  if (ses.t0 !== null && r.duracion_s >= 3) guardarEnHistorial(registro);
-  else registro.noGuardada = true;
+  if (ses.t0 !== null && r.duracion_s >= 3) {
+    guardarEnHistorial(registro);
+    // el esfuerzo máximo de hoy, para medir la próxima sesión contra él
+    if (perfil && usuario) cuenta.guardarPerfil(perfil).catch((e) => console.error(e));
+  } else registro.noGuardada = true;
   if (mostrar) {
     pintarResultados(registro);
     history.replaceState({ pantalla: "resultados" }, "", "#resultados");
@@ -342,6 +399,23 @@ function instruccion(texto, tono = "") {
   el.dataset.tono = tono;
 }
 
+function esperaVoz(ses, ahora) {
+  const esperar = ses.clave === "terapia" && voz.activa && estaHablando();
+  if (esperar) {
+    if (ses.esperandoVozDesde == null) {
+      ses.esperandoVozDesde = ahora;
+      if (!ses.calibrador.listo) capa("Escuche la indicación…", 0);
+    }
+    return true;
+  }
+  if (ses.esperandoVozDesde != null) {
+    if (ses.t0 !== null && ses.calibrador.listo) ses.pausa += ahora - ses.esperandoVozDesde;
+    ses.esperandoVozDesde = null;
+    if (!ses.calibrador.listo) capa("Mire al frente y no se mueva", 0);
+  }
+  return false;
+}
+
 function capa(texto, avance = null, sinAnillo = false) {
   const el = $("#capa");
   if (texto === null) { el.hidden = true; return; }
@@ -373,8 +447,8 @@ function actualizar(e, m, t, ahora) {
   for (const texto of e.mensajes) {
     const final = /rutina completa/i.test(texto);
     instruccion(texto, final ? "exito" : "");
-    hablar(texto);
   }
+  for (const texto of e.mensajes) decirMensaje(ses, texto);
   for (const texto of e.registros) nota(t, texto);
 
   // alarma
@@ -591,7 +665,9 @@ async function guardarEnHistorial(reg) {
   } catch (e) {
     console.error(e);
     reg.noGuardada = true;
-    error(`La sesión no se pudo guardar en tu cuenta: ${e.message}. Puedes descargar la bitácora en CSV.`, "Sin guardar");
+    error(e.estado === 401
+      ? "Tu sesión de la cuenta expiró, así que este resultado no se guardó. Descarga la bitácora en CSV antes de salir y vuelve a iniciar sesión."
+      : `La sesión no se pudo guardar en tu cuenta: ${e.message} Puedes descargar la bitácora en CSV.`, "Sin guardar");
   }
 }
 
@@ -699,7 +775,7 @@ $("#borrar-historial").addEventListener("click", async () => {
     historial = [];
     pintarInicio();
   } catch (e) {
-    error(e.message, "No se pudo borrar");
+    if (e.estado !== 401) error(e.message, "No se pudo borrar");   // 401: ya avisa el acceso
   }
 });
 
@@ -709,7 +785,7 @@ $("#borrar-cuenta").addEventListener("click", async () => {
     await cuenta.borrarCuenta();
     alSalir();
   } catch (e) {
-    error(e.message, "No se pudo borrar");
+    if (e.estado !== 401) error(e.message, "No se pudo borrar");   // 401: ya avisa el acceso
   }
 });
 
@@ -723,6 +799,16 @@ function alEntrar(u) {
   cargarHistorial();
   precargar();
 }
+
+// Cualquier llamada a la API que responda 401 (sesión vencida o cerrada en otro
+// dispositivo) regresa al acceso con un aviso. Si hay un resultado en pantalla,
+// se deja ahí para que se pueda descargar; el aviso de «Sin guardar» lo explica.
+window.addEventListener("sesion-expirada", () => {
+  if (!usuario || pantallaActual === "resultados") return;
+  alSalir();
+  cambiarPestana("entrar");
+  errorFormulario($("#form-entrar"), "Tu sesión expiró o se cerró. Vuelve a iniciar sesión.");
+});
 
 function alSalir() {
   if (sesion) terminarSesion({ mostrar: false });

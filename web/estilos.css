@@ -149,6 +149,13 @@ main { padding: 0 max(16px, env(safe-area-inset-right)) calc(24px + env(safe-are
 .interruptor input:checked + .interruptor__pista::after { transform: translateX(18px); }
 .interruptor input:focus-visible + .interruptor__pista { outline: 3px solid var(--primario); outline-offset: 2px; }
 .interruptor small { color: var(--texto-suave); }
+.selector-voz { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; }
+.selector-voz label { color: var(--texto-suave); font-size: .9rem; }
+.selector-voz select {
+  flex: 1 1 220px; max-width: 420px; min-height: 40px; padding: 6px 10px;
+  border: 1px solid var(--borde); border-radius: var(--radio-chico);
+  background: var(--superficie); color: var(--texto); font: inherit; font-size: .9rem;
+}
 
 .historial { margin-top: 28px; }
 .historial__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }

@@ -140,6 +140,10 @@ python -m emolang evaluar ejemplos/conduccion.emo --csv grabaciones/p1_conduccio
 
 Otras opciones de `ejecutar`: `--sensor csv --csv datos.csv`, `--escenario normal|conduccion|rehabilitacion`, `--tiempo-real`, `--duracion 60`. Para generar un CSV de prueba: `python -m emolang grabar conduccion datos.csv`.
 
+## Cada ejercicio se mide contra el esfuerzo máximo de la persona
+
+Con parálisis facial una persona puede no sonreír con fuerza, no subir mucho las cejas o no cerrar del todo los ojos: para ella un movimiento ligero ya es su mejor esfuerzo. Por eso la rutina usa `sonrisa_rel`, `cejas_rel` y `ojos_rel` (`emolang/perfil.py`): el movimiento entre el máximo de esa persona, y los umbrales (60 %, 60 %, 70 %) son relativos a ese máximo. Las cejas se miden desde su nivel en reposo y los ojos por cuánto cierran respecto de su ojo abierto. Todo se aprende solo (movimiento sostenido 300 ms; reposo con la cara relajada), se guarda en la cuenta (web) o con `ejecutar --perfil archivo.json` (terminal), y hay un mínimo para que la cara relajada nunca cuente.
+
 ## Cómo se traduce un gesto a autómata
 
 `gesto microsueno = ear < 0.2 durante 1 s;` a 30 fps se convierte en un AFD sobre el alfabeto {1, 0} con 31 estados: `q_i` = "la condición lleva i cuadros seguidos". Con `1` avanza, con `0` vuelve a `q0`; la transición `q29 →1→ q30` emite el evento `microsueno`. Con `hasta`, el evento se emite al soltar la condición dentro del intervalo (así se distingue un parpadeo de un microsueño). Con `tolerando 100 ms` se agregan estados `q_i~g` que perdonan hasta 3 cuadros de interrupción (ruido de la cámara) sin reiniciar el conteo. Las secuencias usan un AFD de reconocimiento de patrones (KMP) y las máquinas de estado se traducen directamente, con `λ` para las transiciones espontáneas. Detalles en [docs/gramatica.md](docs/gramatica.md).

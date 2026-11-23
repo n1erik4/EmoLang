@@ -57,11 +57,12 @@ def construir(dist=DIST):
     with open(os.path.join(dist, "version.json"), "w", encoding="utf-8") as f:
         json.dump({"version": v}, f)
     # Evita que el navegador use archivos viejos después de publicar una versión nueva.
-    indice = os.path.join(dist, "index.html")
-    with open(indice, encoding="utf-8") as f:
-        html = f.read()
-    with open(indice, "w", encoding="utf-8") as f:
-        f.write(html.replace("__VERSION__", v))
+    for pagina in ("index.html", "landing.html"):
+        ruta = os.path.join(dist, pagina)
+        with open(ruta, encoding="utf-8") as f:
+            html = f.read()
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(html.replace("__VERSION__", v))
     open(os.path.join(dist, ".nojekyll"), "w").close()
     print(f"Sitio en {dist} (versión {v})")
     return dist

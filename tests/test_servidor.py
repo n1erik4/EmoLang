@@ -124,8 +124,7 @@ class TestHttp(unittest.TestCase):
         return r.status, r.getheader("Set-Cookie"), (json.loads(cuerpo) if r.getheader("Content-Type", "").startswith("application/json") else cuerpo)
 
     def test_flujo_completo(self):
-        estado, _, _ = self.pedir("GET", "/api/yo")
-        self.assertEqual(estado, 401)
+        self.assertEqual(self.pedir("GET", "/api/yo")[0::2], (200, None))   # sin sesión: no es error
         estado, cookie, u = self.pedir("POST", "/api/registro", {"nombre": "Carla", "correo": "carla@x.mx",
                                                                  "contrasena": "secreta123", "rol": "conductor",
                                                                  "consentimiento": True})

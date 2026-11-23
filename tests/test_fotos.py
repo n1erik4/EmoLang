@@ -26,7 +26,7 @@ class TestReporteFotos(unittest.TestCase):
         filas = [
             fila("sonrisa", "sonrisa/a.jpg", sonrisa=0.9, sim=0.6),
             fila("sonrisa", "sonrisa/b.jpg", sonrisa=0.7),
-            fila("sonrisa", "sonrisa/c.jpg", sonrisa=0.3),            # sonrisa leve: no se detecta con 40 %
+            fila("sonrisa", "sonrisa/c.jpg", sonrisa=0.3),            # sonrisa leve: cuenta si es lo máximo que la persona sonríe
             fila("sonrisa", "sonrisa/lejos.jpg", sonrisa=0.9, tam=0.05),   # cara pequeña: no cuenta
             fila("sonrisa", "sonrisa/mala.jpg", sonrisa=0.0),         # descartada en la revisión
             fila("cejas", "cejas/a.jpg", cejas=0.8),
@@ -55,8 +55,8 @@ class TestReporteFotos(unittest.TestCase):
         self.assertIn("sin rostro detectado: 1", texto)
         self.assertIn("**útiles: 7**", texto)
         # sonreir: 2 de 3 sonrisas pasan 0.4; 1 de 4 negativas (neutra b) es falsa alarma
-        self.assertIn("| sonreir | sonrisa > 0.4 | 2 | 1 | 1 | 66.7% | 75.0% |", texto)
-        self.assertIn("| cerrar_ojos | ear < 0.15 | 1 | 0 | 0 | 100.0% | 100.0% |", texto)
+        self.assertIn("| sonreir | sonrisa > 0.18 | 3 | 0 | 1 | 100.0% | 75.0% |", texto)
+        self.assertIn("| cerrar_ojos | ear < 0.216 | 1 | 0 | 0 | 100.0% | 100.0% |", texto)
         self.assertIn("| sonrisa | 3 | ", texto)
 
     def test_mejor_umbral_separa_las_fotos(self):
@@ -65,7 +65,7 @@ class TestReporteFotos(unittest.TestCase):
         self.assertTrue(0.45 <= u < 0.5)
 
     def test_umbrales_vienen_del_programa(self):
-        self.assertEqual(F.umbrales_del_programa(PROGRAMA), {"sonrisa": 0.4, "cejas": 0.5, "ear": 0.15})
+        self.assertEqual(F.umbrales_del_programa(PROGRAMA), {"sonrisa": 0.18, "cejas": 0.22, "ear": 0.216})
 
 
 if __name__ == "__main__":

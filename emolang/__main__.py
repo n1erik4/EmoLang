@@ -260,9 +260,14 @@ def cmd_ejecutar(args):
     if args.sensor == "simulado" and not args.escenario:
         args.escenario = _escenario_de(dominio)
     sensor = _crear_sensor(args, fps)
+    from .perfil import Perfil
+    perfil = None
+    if args.perfil and os.path.exists(args.perfil):
+        with open(args.perfil, encoding="utf-8") as f:
+            perfil = Perfil.desde_dict(json.load(f))
     try:
         res = ejecutar(r, dominio, sensor, tiempo_real=args.tiempo_real, sonido=args.sonido,
-                       verbose=not args.silencioso)
+                       verbose=not args.silencioso, perfil=perfil)
     except ErrorEmoLang as e:
         print(f"\nError en tiempo de ejecución: {e}")
         return 1
@@ -274,6 +279,10 @@ def cmd_ejecutar(args):
     if args.bitacora:
         res.modulo.exportar_bitacora(args.bitacora)
         print(f"  bitácora exportada a {os.path.abspath(args.bitacora)}")
+    if args.perfil:
+        with open(args.perfil, "w", encoding="utf-8") as f:
+            json.dump(res.motor.perfil.a_dict(), f)
+        print(f"  esfuerzo máximo guardado en {args.perfil}")
     return 0
 
 
@@ -473,6 +482,7 @@ def main(argv=None):
     sp.add_argument("--sin-video", action="store_true", help="no mostrar ventana de cámara")
     sp.add_argument("--bitacora", help="exportar bitácora de eventos a CSV")
     sp.add_argument("--silencioso", action="store_true")
+    sp.add_argument("--perfil", help="archivo JSON con el esfuerzo máximo de la persona (se lee y se actualiza)")
 
     sp = sub.add_parser("evaluar", help="exactitud, falsos positivos/negativos y latencia")
     sp.add_argument("archivo")

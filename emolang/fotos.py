@@ -36,6 +36,9 @@ CONSULTAS = {
                       "sleeping face closeup", "eyes shut portrait"],
     "neutra": ["neutral expression portrait", "serious face portrait", "expressionless face",
                "passport photo face", "headshot neutral expression"],
+    # Personas con parálisis facial (pocas fotos y muy mezcladas: hay que revisarlas en la galería)
+    "paralisis": ["facial paralysis", "bell's palsy", "facial palsy", "facial nerve paralysis",
+                  "stroke facial droop", "hemifacial paralysis", "parálisis facial"],
 }
 
 API = "https://api.openverse.org/v1/images/"
@@ -266,9 +269,13 @@ def umbrales_del_programa(ruta_programa):
     """Lee umbral_sonrisa, umbral_cejas y umbral_ojos del programa de terapia."""
     from .compilador import compilar_archivo
     r = compilar_archivo(ruta_programa, hasta="semantico")
+    from .perfil import umbral_en_foto
     valores = {s.nombre: s.valor for s in r.analisis.tabla if s.nombre.startswith("umbral_")}
-    return {"sonrisa": valores.get("umbral_sonrisa", 0.4), "cejas": valores.get("umbral_cejas", 0.5),
-            "ear": valores.get("umbral_ojos", 0.15)}
+    # Los umbrales son relativos al máximo de cada persona (perfil.py). En una foto no hay
+    # historial de la persona: se usa el movimiento más ligero que puede contar.
+    return {"sonrisa": umbral_en_foto("sonrisa", valores.get("umbral_sonrisa", 0.6)),
+            "cejas": umbral_en_foto("cejas", valores.get("umbral_cejas", 0.6)),
+            "ear": umbral_en_foto("ojos", valores.get("umbral_ojos", 0.7))}
 
 
 # (ejercicio, métrica, etiqueta positiva, sentido): 'mayor' = el gesto ocurre si métrica > umbral

@@ -29,13 +29,15 @@ export async function leerPrograma(nombre) {
 }
 
 // Una sesión: compila el programa y lo ejecuta cuadro por cuadro.
-export async function crearSesion(nombrePrograma) {
+// `perfil` (terapia): el esfuerzo máximo de cada ejercicio guardado en la cuenta.
+export async function crearSesion(nombrePrograma, perfil = null) {
   const [web, fuente] = await Promise.all([cargarMotor(), leerPrograma(nombrePrograma)]);
-  const s = web.nueva_sesion(fuente);
+  const s = web.nueva_sesion(fuente, perfil ? JSON.stringify(perfil) : null);
   const info = JSON.parse(s.info());
   return {
     info,
     paso: (tMs, metricas) => JSON.parse(s.paso(tMs, JSON.stringify(metricas))),
+    perfil: () => JSON.parse(s.perfil()),
     terminar: () => {
       const r = JSON.parse(s.terminar());
       s.destroy();
