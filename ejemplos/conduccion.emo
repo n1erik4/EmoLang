@@ -2,12 +2,13 @@
 dominio conduccion {
 
     sensor camara {
-        usar ear, mar, pitch, yaw, perclos;
+        usar ear, cierre_ojos, mar, pitch, yaw, perclos;
         var fps : int = 30;
     }
 
     // Umbrales configurables por el supervisor de transporte
     var umbral_ojo     : proporcion = 0.20;
+    var umbral_cierre  : proporcion = 50%;   // cierre_ojos (eyeBlink de MediaPipe)
     // Valores ajustados con el diagnóstico de cámara (python -m emolang diagnostico)
     var umbral_bostezo : proporcion = 33%;
     var umbral_perclos : proporcion = 15%;
@@ -17,11 +18,16 @@ dominio conduccion {
 
     // Gestos: condiciones sostenidas en el tiempo.
     // 'tolerando' perdona interrupciones breves (ruido o cuadros perdidos)
-    // sin reiniciar el conteo de la duración.
+    // sin reiniciar el conteo de la duración. Las cámaras de laptop y celular dan
+    // ~15 fps: 250 ms son 3-4 cuadros; con 100 ms un solo cuadro malo reiniciaba
+    // el conteo del microsueño y la alarma se atrasaba segundos.
+    // Ojos cerrados: ear o cierre_ojos; si uno de los dos falla en un cuadro, el otro
+    // sostiene la detección.
     gesto parpadeo     = ear < umbral_ojo y mar < umbral_bostezo durante 60 ms hasta 400 ms;
-    gesto microsueno   = ear < umbral_ojo y mar < umbral_bostezo durante 1 s tolerando 100 ms;
-    gesto bostezo      = mar > umbral_bostezo durante 1.5 s tolerando 200 ms;
-    gesto cabeceo      = pitch > cabeceo_grados y ear < 0.27 durante 300 ms tolerando 100 ms;
+    gesto microsueno   = (ear < umbral_ojo o cierre_ojos > umbral_cierre) y mar < umbral_bostezo
+                         durante 1 s tolerando 250 ms;
+    gesto bostezo      = mar > umbral_bostezo durante 1.5 s tolerando 250 ms;
+    gesto cabeceo      = pitch > cabeceo_grados y ear < 0.27 durante 300 ms tolerando 250 ms;
     gesto distraccion  = yaw > giro_grados o yaw < -giro_grados durante 2 s tolerando 200 ms;
     gesto atento       = pitch < 10.0 y yaw < 20.0 y yaw > -20.0 y ear > umbral_ojo durante 3 s tolerando 200 ms;
 
@@ -37,6 +43,7 @@ dominio conduccion {
 
             cuando parpadeo   { parpadeos = parpadeos + 1; }
             cuando bostezo    { registrar("bostezo detectado"); ir_a somnoliento; }
+            cuando cabeceo    { registrar("cabeceo"); ir_a somnoliento; }
             cuando microsueno ir_a alerta;
             cuando distraccion ir_a distraido;
             cuando fatiga     ir_a alerta;
@@ -53,7 +60,7 @@ dominio conduccion {
             cuando microsueno ir_a alerta;
             cuando fatiga     ir_a alerta;
             cuando distraccion ir_a distraido;   // somnoliento y sin mirar al frente
-            cuando cabeceo    { registrar("cabeceo"); }
+            cuando cabeceo    { registrar("cabeceo otra vez"); ir_a alerta; }
             ignorar bostezo, atento;             // ya se sabe que está somnoliento
             // solo se relaja cuando pasaron 15 s Y el PERCLOS ya bajó
             mientras tiempo_en_estado() > 15 s y perclos < umbral_perclos {
@@ -66,7 +73,7 @@ dominio conduccion {
             cuando atento ir_a normal;
             cuando microsueno ir_a alerta;
             cuando tras 30 s ir_a alerta;         // lleva demasiado sin mirar al frente
-            ignorar bostezo, distraccion, fatiga; // la alarma ya está sonando
+            ignorar bostezo, cabeceo, distraccion, fatiga; // la alarma ya está sonando
         }
 
         estado alerta {
@@ -79,7 +86,7 @@ dominio conduccion {
                 }
             }
             cuando atento ir_a normal;
-            ignorar bostezo, microsueno, distraccion, fatiga;  // alarma activa hasta estar atento
+            ignorar bostezo, microsueno, cabeceo, distraccion, fatiga;  // alarma activa hasta estar atento
         }
     }
 }

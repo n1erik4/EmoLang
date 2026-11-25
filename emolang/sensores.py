@@ -60,6 +60,7 @@ class SensorSimulado:
         self.duracion = duracion or esc["duracion"]
         self.rng = random.Random(semilla)
         self.rng_lados = random.Random(semilla + 1)
+        self.rng_cierre = random.Random(semilla + 2)   # aparte, para no mover el ruido de lo demás
         self.ruido = ruido
         self.eventos = [e for e in esc["eventos"] if e[1] < self.duracion]
         self.verdad = [(tipo, ini * 1000, (ini + dur) * 1000) for tipo, ini, dur, _ in self.eventos]
@@ -91,10 +92,12 @@ class SensorSimulado:
         rn = lambda s=1.0: self.rng.gauss(0, self.ruido * s)
         cejas_izq = cejas_der = None
         cierre_izq = cierre_der = 0.0
+        cierre = 0.0                                 # cierre_ojos (eyeBlink de MediaPipe)
 
         for a, b in self._parpadeos:
             if a <= t_ms < b:
                 m["ear"] = 0.08
+                cierre = 0.9
         for tipo, ini, dur, p in self.eventos:
             if not (ini <= ts < ini + dur):
                 continue
@@ -103,13 +106,16 @@ class SensorSimulado:
             if tipo == "bostezo":
                 m["mar"] = 0.03 + 0.42 * min(1.0, 1.6 * campana)   # medido: ~0.38-0.45
                 m["ear"] = 0.30 - 0.15 * campana   # se entrecierran los ojos (medido: ~0.15)
+                cierre = 0.35 * campana
                 m["pitch"] = -8 * campana
             elif tipo == "microsueno":
                 m["ear"] = 0.07
+                cierre = 0.9
                 m["pitch"] = 8 * min(1.0, 3 * x)
             elif tipo == "cabeceo":
                 m["pitch"] = 16 * campana                           # medido: ~8-12° (+ margen)
                 m["ear"] = 0.24
+                cierre = 0.3
             elif tipo == "distraccion":
                 m["yaw"] = 28 * min(1.0, 3 * campana)               # medido: 23-33°
             elif tipo == "sonrisa":
@@ -119,12 +125,14 @@ class SensorSimulado:
                 m["sonrisa_der"] = nivel * (1 - asim)
                 m["sonrisa"] = (m["sonrisa_izq"] + m["sonrisa_der"]) / 2
                 m["ear"] = 0.30 - 0.12 * campana   # medido: ~0.18 al sonreir
+                cierre = 0.3 * campana
             elif tipo == "cejas":
                 nivel = 0.2 + 0.55 * min(1.0, 1.8 * campana)
                 cejas_izq, cejas_der = nivel, nivel * (1 - p.get("asimetria", 0.0))
                 m["cejas"] = (cejas_izq + cejas_der) / 2
             elif tipo == "ojos":
                 m["ear"] = 0.06
+                cierre = 0.9
                 cierre_izq, cierre_der = 0.9, 0.9 * (1 - p.get("asimetria", 0.0))
 
         # ruido de medición
@@ -143,6 +151,7 @@ class SensorSimulado:
         m["simetria_sonrisa"] = simetria_par(m["sonrisa_izq"], m["sonrisa_der"])
         m["simetria_cejas"] = simetria_par(m["cejas_izq"], m["cejas_der"])
         m["simetria_ojos"] = simetria_par(_limitar(cierre_izq + lado()), _limitar(cierre_der + lado()))
+        m["cierre_ojos"] = _limitar(cierre + self.rng_cierre.gauss(0, 2 * self.ruido))
         return m
 
 

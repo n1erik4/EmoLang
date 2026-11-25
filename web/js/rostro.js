@@ -10,7 +10,7 @@ export const BOCA_H = [78, 308];
 export const NEUTRAS = Object.freeze({
   ear: 0.30, ear_izq: 0.30, ear_der: 0.30, mar: 0.05,
   sonrisa: 0.05, sonrisa_izq: 0.05, sonrisa_der: 0.05, cejas: 0.2,
-  cejas_izq: 0.2, cejas_der: 0.2, simetria_sonrisa: 1.0, simetria_cejas: 1.0, simetria_ojos: 1.0,
+  cejas_izq: 0.2, cejas_der: 0.2, simetria_sonrisa: 1.0, simetria_cejas: 1.0, simetria_ojos: 1.0, cierre_ojos: 0.0,
   simetria: 0.97, perclos: 0.0, pitch: 0.0, yaw: 0.0, roll: 0.0, rostro: true,
 });
 
@@ -76,6 +76,7 @@ export function metricasDe(resultado, ancho, alto, previas, basePose = [0, 0, 0]
     m.simetria_sonrisa = simetriaPar(m.sonrisa_izq, m.sonrisa_der);
     m.simetria_cejas = simetriaPar(m.cejas_izq, m.cejas_der);
     m.simetria_ojos = simetriaPar(g("eyeBlinkLeft"), g("eyeBlinkRight"));
+    m.cierre_ojos = (g("eyeBlinkLeft") + g("eyeBlinkRight")) / 2;
   }
   if (resultado.facialTransformationMatrixes && resultado.facialTransformationMatrixes.length) {
     const pose = euler(resultado.facialTransformationMatrixes[0]);
