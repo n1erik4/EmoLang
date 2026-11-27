@@ -1,0 +1,28 @@
+// Llamadas y retornos de funciones.
+funcion area(base : decimal, altura : decimal) : decimal {
+    retornar base * altura / 2;
+}
+
+funcion signo(x : int) : int {           // error: no devuelve valor en todos los caminos
+    si x > 0 { retornar 1; }
+    sino { si x < 0 { retornar -1; } }
+}
+
+funcion saludar(nombre : string) {
+    mostrar("hola " + nombre);
+    retornar 5;                          // error: una función sin tipo no devuelve valor
+}
+
+funcion contar() : int {
+    retornar;                            // error: falta el valor de retorno
+}
+
+funcion principal() : int {
+    mostrar(area(3.0));                  // error: faltan argumentos
+    mostrar(area(1.0, 2.0, 3.0));        // error: sobran argumentos
+    mostrar(area("tres", 2.0));          // error: el argumento 1 debe ser decimal
+    var r : int = area(2.0, 4.0);        // error: area devuelve decimal
+    var q : int = saludar("Ana");        // error: saludar no devuelve valor
+    mostrar(signo(3), contar());
+    retornar 0;
+}

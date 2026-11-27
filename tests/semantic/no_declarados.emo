@@ -1,0 +1,21 @@
+// Nombres no declarados o declarados dos veces.
+var total : int = 0;
+
+funcion sumar(a : int, b : int) : int {
+    retornar a + b + c;                  // error: 'c' no está declarada
+}
+
+funcion principal() : int {
+    var x : int = 1;
+    var x : int = 2;                     // error: 'x' ya existe en este ámbito
+    total = total + w;                   // error: 'w' no está declarada
+    mostrar(restar(3, 1));               // error: la función 'restar' no existe
+    var r : Rectangulo;                  // error: el tipo 'Rectangulo' no existe
+    var lista : int[2];
+    mostrar(lista[0] + otra[1]);         // error: el arreglo 'otra' no existe
+    retornar sumar(x, 1);
+}
+
+funcion sumar(a : int) : int {           // error: la función ya fue definida
+    retornar a;
+}

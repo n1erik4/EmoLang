@@ -1,0 +1,11 @@
+[semantico] error en 8:14: identificador 'resultado' no declarado
+[semantico] error en 18:13: identificador 'i' no declarado
+[semantico] error en 19:14: identificador 'dentro' no declarado
+[semantico] error en 23:5: 'alarma' solo se puede usar dentro de un estado
+[semantico] error en 24:24: 'tiempo_en_estado' solo se puede usar dentro de un estado
+[semantico] error en 25:13: la métrica 'ear' solo se puede leer dentro de un dominio; pásela como parámetro a la función
+[semantico] error en 38:20: la métrica 'pitch' no está habilitada en 'usar' del sensor
+[semantico] error en 39:20: no se pueden llamar funciones dentro de la condición de un gesto
+[semantico] error en 40:26: identificador 'limite' no declarado
+[semantico] error en 50:17: variable 'limite' no declarada
+[semantico] error en 51:17: 'contar_repeticion' solo está disponible en el dominio rehabilitacion

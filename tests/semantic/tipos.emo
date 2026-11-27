@@ -1,0 +1,32 @@
+// Errores de tipo intencionales. Cada línea marcada con «error:» debe reportarse.
+estructura Punto {
+    px : int;
+    py : int;
+}
+
+funcion promedio(a : int, b : int) : decimal {
+    retornar (a + b) / 2;
+}
+
+funcion principal() : int {
+    var n     : int    = 2.5;            // error: decimal -> int pierde precisión
+    var texto : string = 3;              // error: int -> string
+    var bandera : bool = 1 + 2;          // error: int -> bool
+    var malo  : int    = "hola" * 2;     // error: '*' no se aplica a string
+    var mitad : int    = promedio(3, 4); // error: la división siempre da decimal
+    var ok    : decimal = 3 + 0.5;       // correcto: int + decimal = decimal
+
+    si n { mostrar(n); }                 // error: la condición debe ser bool
+    mientras "sí" { mostrar(1); }        // error: la condición debe ser bool
+    var b : bool = verdadero y 1;        // error: 'y' necesita dos bool
+    var c : bool = no 5;                 // error: 'no' necesita bool
+
+    var v : int[3];
+    v[0] = 1.5;                          // error: elemento int recibe decimal
+    v[verdadero] = 2;                    // error: el índice debe ser int
+    var p : Punto;
+    p.px = "uno";                        // error: campo int recibe string
+    p.pz = 1;                             // error: el campo no existe
+
+    retornar "fin";                      // error: principal devuelve int
+}

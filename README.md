@@ -55,6 +55,10 @@ ejemplos/          conduccion.emo, rehabilitacion.emo, terapia_facial.emo, error
 docs/gramatica.md  gramática EBNF, tipos, ámbitos, semántica           → objetivo 1
   captura.py       grabación con cámara + etiquetado manual (verdad de terreno)
 tests/             pruebas unitarias de todas las fases
+  semantic/        programas con errores intencionales (+ .esperado: errores que deben reportarse)
+  intermediate/    ciclos anidados y código redundante (+ .esperado: salida del programa)
+  execution/       algoritmos clásicos en ensamblador (+ .esperado: salida del programa)
+reporte/generar_final.py   genera el reporte final (EmoLang_Reporte_Final.pdf)
 docs/protocolo_evaluacion.md   cómo grabar y evaluar con datos reales
 ```
 

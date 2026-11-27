@@ -1,0 +1,8 @@
+[semantico] error en 6:1: la función 'signo' debe devolver un valor int en todos los caminos
+[semantico] error en 13:5: la función 'saludar' no devuelve un valor
+[semantico] error en 17:5: 'contar' debe devolver int, no void
+[semantico] error en 21:13: 'area' espera 2 argumento(s) y recibió 1
+[semantico] error en 22:13: 'area' espera 2 argumento(s) y recibió 3
+[semantico] error en 23:13: argumento 1 de 'area': se esperaba decimal, se recibió string
+[semantico] error en 24:5: no se puede asignar decimal a la variable 'r' de tipo int
+[semantico] error en 25:19: 'saludar' no devuelve un valor
