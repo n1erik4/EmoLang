@@ -5,7 +5,6 @@ contar_repeticion...) y el reporte final de cada dominio.
 """
 
 import csv
-import threading
 
 
 class ModuloBase:
@@ -161,7 +160,7 @@ def modulo_para(dominio, **kw):
 
 def _pitido():
     try:
-        import winsound
-        threading.Thread(target=winsound.Beep, args=(1200, 300), daemon=True).start()
+        from .sonido import pitido      # no está en la web (Pyodide): ahí suena la página
+        pitido(1200, 300)
     except Exception:
         print("\a", end="", flush=True)

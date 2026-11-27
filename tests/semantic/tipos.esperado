@@ -1,0 +1,14 @@
+[semantico] error en 12:5: no se puede asignar decimal a la variable 'n' de tipo int
+[semantico] error en 13:5: no se puede asignar int a la variable 'texto' de tipo string
+[semantico] error en 14:5: no se puede asignar int a la variable 'bandera' de tipo bool
+[semantico] error en 15:33: operador '*' no aplicable a string y int
+[semantico] error en 16:5: no se puede asignar decimal a la variable 'mitad' de tipo int
+[semantico] error en 19:8: la condición de 'si' debe ser bool, no int
+[semantico] error en 20:14: la condición de 'mientras' debe ser bool, no string
+[semantico] error en 21:30: el operador 'y' requiere operandos bool (recibió bool y int)
+[semantico] error en 22:20: 'no' requiere bool (recibió int)
+[semantico] error en 25:5: no se puede asignar decimal a un elemento de tipo int
+[semantico] error en 26:7: el índice de un arreglo debe ser int, no bool
+[semantico] error en 28:5: no se puede asignar string a un elemento de tipo int
+[semantico] error en 29:5: la estructura Punto no tiene el campo 'pz'
+[semantico] error en 31:5: 'principal' debe devolver int, no string

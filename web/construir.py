@@ -19,7 +19,8 @@ RAIZ = os.path.dirname(AQUI)
 DIST = os.path.join(AQUI, "dist")
 PROGRAMAS = ["terapia_facial.emo", "conduccion.emo"]
 # Módulos que solo sirven en la computadora (cámara con OpenCV, fotos, ensamblador, CLI).
-SOLO_ESCRITORIO = {"camara.py", "captura.py", "diagnostico.py", "fotos.py", "codigo_objeto.py", "__main__.py"}
+SOLO_ESCRITORIO = {"camara.py", "captura.py", "diagnostico.py", "fotos.py", "codigo_objeto.py", "__main__.py",
+                  "sonido.py"}
 
 
 def version():

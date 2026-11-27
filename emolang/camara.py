@@ -118,6 +118,7 @@ def metricas_de(resultado, ancho, alto, previas, base_pose=(0.0, 0.0, 0.0)):
         m["simetria_sonrisa"] = simetria_par(m["sonrisa_izq"], m["sonrisa_der"])
         m["simetria_cejas"] = simetria_par(m["cejas_izq"], m["cejas_der"])
         m["simetria_ojos"] = simetria_par(bs.get("eyeBlinkLeft", 0.0), bs.get("eyeBlinkRight", 0.0))
+        m["cierre_ojos"] = (bs.get("eyeBlinkLeft", 0.0) + bs.get("eyeBlinkRight", 0.0)) / 2
     if resultado.facial_transformation_matrixes:
         pose = _euler(resultado.facial_transformation_matrixes[0])
         m["pitch"], m["yaw"], m["roll"] = (max(-90.0, min(90.0, v - b))

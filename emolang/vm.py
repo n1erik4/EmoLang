@@ -11,7 +11,7 @@ from collections import deque
 
 from .errores import ErrorEmoLang
 from .intermedio import MAX_REPETIR, es_temporal
-from .metricas import metricas_neutras
+from .metricas import metricas_neutras, ojos_cerrados
 from .perfil import Perfil
 from .optimizador import calcular
 
@@ -128,7 +128,7 @@ class EmoVM:
         return self._eventos
 
     def _actualizar_perclos(self):
-        cerrado = float(self.metricas.get("ear", 0.3)) < 0.2
+        cerrado = ojos_cerrados(self.metricas)
         self._perclos.append((self.t, cerrado))
         while self._perclos and self.t - self._perclos[0][0] > 60_000:
             self._perclos.popleft()

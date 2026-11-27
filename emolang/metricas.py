@@ -42,6 +42,9 @@ METRICAS = {m.nombre: m for m in [
             "Simetría facial izquierda/derecha (1 = perfectamente simétrico)"),
     Metrica("simetria_sonrisa", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría de la sonrisa"),
     Metrica("simetria_cejas", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría de la elevación de cejas"),
+    Metrica("cierre_ojos", "proporcion", 0.0, 1.0, (0.0, 1.0),
+            "Cierre de los párpados según MediaPipe (eyeBlink, promedio de ambos ojos): 0 abiertos, "
+            "1 cerrados. A diferencia de ear, no depende de la distancia a la cámara"),
     Metrica("simetria_ojos", "proporcion", 0.0, 1.0, (0.0, 1.0), "Simetría del cierre de los ojos"),
     Metrica("perclos", "proporcion", 0.0, 1.0, (0.0, 1.0),
             "Proporción de tiempo con ojos cerrados en los últimos 60 s"),
@@ -58,6 +61,18 @@ def metricas_neutras():
     return {
         "ear": 0.30, "ear_izq": 0.30, "ear_der": 0.30, "mar": 0.05,
         "sonrisa": 0.05, "sonrisa_rel": 0.0, "cejas_rel": 0.0, "ojos_rel": 0.0, "sonrisa_izq": 0.05, "sonrisa_der": 0.05, "cejas": 0.2,
-        "cejas_izq": 0.2, "cejas_der": 0.2, "simetria_sonrisa": 1.0, "simetria_cejas": 1.0, "simetria_ojos": 1.0,
+        "cejas_izq": 0.2, "cejas_der": 0.2, "simetria_sonrisa": 1.0, "simetria_cejas": 1.0, "simetria_ojos": 1.0, "cierre_ojos": 0.0,
         "simetria": 0.97, "perclos": 0.0, "pitch": 0.0, "yaw": 0.0, "roll": 0.0, "rostro": True,
     }
+
+
+# PERCLOS: un cuadro cuenta con los ojos cerrados si ear < EAR_CERRADO (de cerca es
+# confiable) o si cierre_ojos > CIERRE_CERRADO. De lejos el ear casi no baja (medido
+# con la persona lejos: 0.29 abiertos, 0.24 cerrados), pero el eyeBlink de MediaPipe sí.
+EAR_CERRADO = 0.2
+CIERRE_CERRADO = 0.5
+
+
+def ojos_cerrados(m):
+    return (float(m.get("ear", 0.3)) < EAR_CERRADO
+            or float(m.get("cierre_ojos", 0.0)) > CIERRE_CERRADO)

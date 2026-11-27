@@ -1,0 +1,30 @@
+// Errores propios del dominio: umbrales, gestos imposibles y máquinas de estado.
+dominio pruebas {
+
+    sensor camara { var fps : int = 30; }
+
+    var limite   : proporcion = 1.5;          // error: umbral fuera de rango (> 100%)
+    var espera   : duracion   = 5;            // error: int no es duracion: falta unidad
+    var contador : int        = 2.5;          // error: decimal -> int pierde precisión
+    var ok       : decimal    = 3 + 0.5;      // correcto: int + decimal = decimal (válido)
+
+    gesto imposible1 = ear < 0.1 y ear > 0.3 durante 1 s;    // error: contradictorio
+    gesto imposible2 = mar > 0.5 durante 2 s hasta 1 s;       // error: min > max
+    gesto fuera      = ear > 1.2 durante 100 ms;              // error: umbral fuera de rango
+    gesto raro       = pitch > 0.2 durante 3;                 // error: durante sin unidad
+    gesto bien       = ear < 0.2 durante 1 s;
+
+    maquina m inicial a {
+        estado a {
+            cuando bien ir_a b;
+            cuando bien ir_a c;         // error: transición contradictoria
+            cuando noexiste ir_a b;     // error: evento no declarado
+        }
+        estado b {
+            cuando imposible1 ir_a a;
+            al_entrar { ok = "texto"; } // error: string -> decimal
+        }
+        estado c { cuando bien ir_a a; }
+        estado huerfano { cuando bien ir_a a; }   // error: inalcanzable
+    }
+}

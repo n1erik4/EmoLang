@@ -1,0 +1,12 @@
+[semantico] error en 6:5: umbral fuera de rango: una proporcion debe estar entre 0 y 1 (0% y 100%), se obtuvo 1.5
+[semantico] error en 7:5: no se puede asignar int a la variable 'espera' de tipo duracion
+[semantico] error en 8:5: no se puede asignar decimal a la variable 'contador' de tipo int
+[dominio] error en 11:5: gesto imposible: la condición de 'imposible1' nunca puede cumplirse
+[dominio] error en 12:5: gesto imposible: 'imposible2' dura al menos 2000 ms pero como máximo 1000 ms
+[dominio] error en 13:5: gesto imposible: la condición de 'fuera' nunca puede cumplirse
+[dominio] error en 13:28: umbral fuera de rango: 'ear' toma valores en [0, 1] y se comparó con 1.2
+[semantico] error en 14:44: 'durante' requiere una duración con unidad (ms o s), se recibió int
+[dominio] error en 20:13: transiciones contradictorias en 'a': el evento 'bien' lleva a b, c
+[semantico] error en 21:13: evento 'noexiste' no declarado
+[semantico] error en 25:25: no se puede asignar string a 'ok' de tipo decimal
+[dominio] error en 28:9: estado inalcanzable: 'huerfano' no puede alcanzarse desde el estado inicial 'a'

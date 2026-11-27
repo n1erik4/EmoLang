@@ -1,0 +1,57 @@
+// Nombres usados fuera de su alcance (ámbito).
+funcion cuadrado(n : int) : int {
+    var resultado : int = n * n;
+    retornar resultado;
+}
+
+funcion usa_ajena() : int {
+    retornar resultado;                  // error: 'resultado' es local de cuadrado
+}
+
+funcion bloques() : int {
+    si verdadero {
+        var dentro : int = 1;
+    }
+    para i = 1 hasta 3 {
+        mostrar(i);
+    }
+    mostrar(i);                          // error: 'i' solo existe dentro del para
+    retornar dentro;                     // error: 'dentro' solo existe en el si
+}
+
+funcion principal() : int {
+    alarma("despierte");                 // error: solo se puede usar en un estado
+    var t : duracion = tiempo_en_estado(); // error: solo dentro de un estado
+    mostrar(ear);                        // error: una función no lee métricas
+    mostrar(cuadrado(4), usa_ajena(), bloques());
+    retornar 0;
+}
+
+dominio conduccion {
+    sensor camara {
+        usar ear, mar;
+        var fps : int = 30;
+    }
+    var umbral : proporcion = 0.2;
+
+    gesto ojos   = ear < umbral durante 1 s;
+    gesto cabeza = pitch > 10.0 durante 300 ms;     // error: pitch no está en 'usar'
+    gesto mala   = cuadrado(2) > 3 durante 1 s;     // error: un gesto no llama funciones
+    gesto local  = ear < limite durante 1 s;        // error: 'limite' es local de normal
+
+    maquina monitor inicial normal {
+        estado normal {
+            var limite : proporcion = 0.1;
+            cuando ojos ir_a alerta;
+            ignorar cabeza, mala, local;
+        }
+        estado alerta {
+            al_entrar {
+                limite = 0.3;            // error: 'limite' es local de normal
+                contar_repeticion();     // error: acción del dominio rehabilitación
+            }
+            cuando ojos ir_a normal;
+            ignorar cabeza, mala, local;
+        }
+    }
+}

@@ -1,0 +1,7 @@
+[semantico] error en 5:22: identificador 'c' no declarado
+[semantico] error en 10:5: 'x' ya fue declarado en este ámbito (línea 9)
+[semantico] error en 11:21: identificador 'w' no declarado
+[semantico] error en 12:13: función 'restar' no definida
+[semantico] error en 13:5: tipo desconocido 'Rectangulo'
+[semantico] error en 15:24: identificador 'otra' no declarado
+[semantico] error en 19:1: 'sumar' ya fue declarado en este ámbito (línea 4)
