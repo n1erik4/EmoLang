@@ -631,41 +631,7 @@ p("<b>Objetivo del proyecto integrador:</b> implementar un compilador para un le
   "todas sus etapas. El lenguaje específico es EmoLang y el compilador recorre las etapas de análisis léxico, "
   "sintáctico y semántico, generación de código intermedio, optimización y generación de código objeto para la "
   "arquitectura x86-64.")
-subtitulo("1.2 Organización del documento")
-p("El documento sigue el orden del planteamiento del proyecto integrador: primero la fundamentación (marco "
-  "teórico, conceptual, contextual y legal), después la especificación y la arquitectura, y al final los manuales "
-  "y la suite de pruebas. La tabla relaciona cada punto solicitado con la sección donde se atiende.")
-tabla([
-    ["Punto solicitado", "Sección"],
-    ["<b>Fundamentación 1. Marco teórico y conceptual</b>", ""],
-    ["Revisión y consolidación de la gramática libre de contexto", "2.1, 4.2"],
-    ["Reglas semánticas dirigidas por la sintaxis, árboles de expresiones, pilas semánticas, tabla de símbolos y "
-     "de direcciones", "2.2, 5.2 a 5.4"],
-    ["Estudio comparativo de representaciones intermedias (notación polaca, código P, triplos y cuádruplos)", "2.3"],
-    ["Técnicas y tipos de optimización (locales, de ciclos, globales y de mirilla)", "2.4"],
-    ["Arquitectura de microprocesadores, registros, ensamblador y administración de memoria", "2.5"],
-    ["<b>Fundamentación 2. Diagnóstico y contextualización</b>", ""],
-    ["Marco contextual y legal", "3.1, 3.2"],
-    ["Alcance del lenguaje (tipos, estructuras de control, funciones y alcance de variables)", "3.3"],
-    ["Plataforma o arquitectura de destino", "3.4"],
-    ["<b>Fundamentación 3. Especificación de requisitos y arquitectura</b>", ""],
-    ["Sintaxis y semántica (variables, constantes, expresiones, asignación, if/else, while, funciones y "
-     "estructuras)", "4.2 a 4.5"],
-    ["Formato de la tabla de símbolos, la tabla de direcciones y el registro de errores", "5.2, 5.3, 5.5"],
-    ["Modelo de representación intermedia", "4.6"],
-    ["Herramientas de desarrollo y lenguaje de construcción", "3.5"],
-    ["<b>Desarrollo: temas 1 a 4</b>", ""],
-    ["Tema 1. Análisis semántico: acciones, árboles y pila, tipos y casting, tablas, errores", "4.3 a 4.5, 5.2 a 5.5, 7.2"],
-    ["Tema 2. Código intermedio: conversión de notaciones, cuádruplas y esquemas de generación", "4.6, 4.7, 4.5, 7.3"],
-    ["Tema 3. Optimización: técnicas, flujo de datos y costos antes y después", "2.4, 5.6, 7.3"],
-    ["Tema 4. Código objeto: registros, traducción a .asm y administración de memoria", "4.8, 5.7, 7.4"],
-    ["<b>Entregables de documentación técnica</b>", ""],
-    ["a. Especificación formal del lenguaje prototipo", "4"],
-    ["b. Manual de arquitectura e implementación", "5"],
-    ["c. Manual de usuario y compilación", "6"],
-    ["d. Suite de pruebas y casos de estudio", "7"],
-], [11.5, 2.2], juntar=False)
-subtitulo("1.3 Alcance del prototipo")
+subtitulo("1.2 Alcance del prototipo")
 p("Un programa EmoLang tiene dos tipos de contenido, que pueden convivir en el mismo archivo:")
 vinetas([
     "<b>Dominios</b> (" + c("dominio conduccion { … }") + "): sensores, gestos con duración, secuencias de gestos y "
@@ -903,7 +869,6 @@ tabla([
     ["MediaPipe Face Landmarker y OpenCV", "Puntos del rostro y captura de la cámara"],
     ["Pyodide", "Ejecutar el mismo compilador dentro del navegador"],
     ["Git y GitHub", "Control de versiones y portafolio del proyecto"],
-    ["ReportLab y Matplotlib", "Generar este reporte y sus figuras a partir del compilador real"],
 ], [4.2, 9.3])
 
 # ================================================================== 4
@@ -1757,17 +1722,53 @@ tabla([["Archivo", "Qué revisa", "Pruebas"]] +
 
 # ================================================================== 6
 titulo("8. Conclusiones", nueva_pagina=True)
-p("El compilador de EmoLang cubre las fases completas de un compilador: análisis léxico, sintáctico y semántico, "
-  "generación de código intermedio, optimización y generación de código objeto para una arquitectura real. Las "
-  "decisiones de diseño se reflejan en el código: la gramática LL(1) permitió escribir a mano un analizador "
-  "descendente recursivo con buenos mensajes de error; las cuádruplas facilitaron un optimizador que mueve y quita "
-  "instrucciones sin renumerar; y la tabla de direcciones conectó el código intermedio con la memoria del programa "
-  "nativo.")
-p("La suite de pruebas da evidencia de cada capacidad: los programas con errores intencionales muestran que el "
-  "gestor de errores reporta todos los problemas en una sola compilación; los programas redundantes muestran la "
-  "reducción de instrucciones ejecutadas; y los algoritmos clásicos producen la misma salida en EmoVM y como "
-  "ejecutables x86-64, con y sin optimización. Como trabajo futuro quedan la evaluación con participantes de los "
-  "módulos de conducción y terapia facial, y la ejecución del código objeto en Windows.")
+_sem_err = sum(x[1] for x in SEMANTICAS)
+_red = [100 * (a.ejecutadas - d.ejecutadas) / a.ejecutadas for _, a, d, _ in INTERMEDIAS]
+_ok = sum(k for *_, k in EJECUCION)
+p("Se cumplió el objetivo del proyecto integrador: se implementó un compilador completo para EmoLang, un "
+  "lenguaje de dominio específico, que recorre todas las etapas de un compilador, desde el análisis léxico hasta "
+  "la generación de código objeto para una arquitectura real. El resultado no se queda en un ejercicio aislado: "
+  "el mismo compilador traduce los programas de propósito general a ejecutables x86-64 y los programas de "
+  "dominio a autómatas que, con una cámara, detectan señales de somnolencia al conducir o cuentan los ejercicios "
+  "de una rutina de terapia facial.")
+p("<b>Análisis léxico, sintáctico y semántico.</b> Definir la gramática como LL(1) permitió escribir a mano un "
+  "analizador descendente recursivo, sin generadores, y controlar cada mensaje de error y la recuperación en modo "
+  "pánico. Sobre el árbol de sintaxis abstracta, el análisis semántico aplica las reglas dirigidas por la sintaxis: "
+  "la tabla de símbolos con ámbitos anidados resuelve el alcance de cada nombre, el verificador de tipos aplica la "
+  "tabla de conversiones implícitas y explícitas, y el registro de errores acumula los diagnósticos de todas las "
+  f"fases. Los {len(SEMANTICAS)} programas de {c('tests/semantic')} lo demuestran: el compilador encontró los "
+  f"{_sem_err} errores intencionales en una sola compilación, cada uno en su línea, y en ningún caso generó código.")
+p("<b>Código intermedio.</b> El estudio comparativo de las representaciones intermedias llevó a elegir los "
+  "cuádruplos, y la decisión se justificó en la práctica: como cada resultado tiene nombre, el optimizador puede "
+  "mover, quitar o reutilizar instrucciones sin renumerar las demás, y cada temporal se traduce directamente a un "
+  "registro o a una dirección de memoria. La pila semántica, recorriendo los árboles de expresión en posorden, "
+  "genera las cuádruplas de las expresiones, asignaciones, estructuras de control, llamadas a funciones y "
+  "estructuras con esquemas de traducción fijos, y el convertidor de notaciones completa el tema con las formas "
+  "infija, prefija y postfija.")
+p("<b>Optimización.</b> Las técnicas locales, de ciclos, globales y de mirilla se aplican hasta que ninguna produce "
+  f"cambios. En los programas de {c('tests/intermediate')} redujeron las cuádruplas ejecutadas entre "
+  f"{min(_red):.0f} % y {max(_red):.0f} %. Medir los costos antes y después dejó una lección: el número de "
+  "instrucciones del programa no es la medida correcta, porque sacar un cálculo de un ciclo puede agregar una "
+  "instrucción y aun así reducir mucho las que se ejecutan; también puede aumentar los registros necesarios, "
+  "porque el valor calculado tiene que conservarse durante todo el ciclo.")
+p("<b>Código objeto.</b> La traducción a ensamblador x86-64 puso en práctica la arquitectura del microprocesador: "
+  "el análisis de variables vivas y el algoritmo linear scan reparten los registros físicos, la tabla de "
+  "direcciones organiza los segmentos de datos y de literales y el marco de pila de cada función, y el traductor "
+  "respeta las convenciones de llamada de Linux y de Windows para poder usar la biblioteca de C. Las "
+  f"<b>{_ok} de {4 * len(EJECUCION)}</b> ejecuciones de los algoritmos clásicos y de los programas de prueba, con y "
+  "sin optimización y con y sin asignación de registros, produjeron exactamente la salida esperada. Esta etapa "
+  "además encontró un error que había pasado inadvertido en el optimizador, porque el procesador distingue entre "
+  "enteros y decimales donde la máquina virtual no lo hacía; comparar dos ejecuciones independientes resultó ser "
+  "una forma muy efectiva de validar un compilador.")
+p(f"<b>Pruebas.</b> La suite automática de {TOTAL_PRUEBAS} pruebas, junto con las tres carpetas de casos de estudio, "
+  "permitió modificar el compilador con confianza durante todo el semestre: cualquier cambio que alterara un "
+  "resultado se detectaba de inmediato.")
+p("<b>Limitaciones y trabajo futuro.</b> El código objeto para Windows se revisó ensamblándolo, pero falta "
+  "ejecutarlo en una computadora con Windows. Los arreglos solo contienen tipos primitivos y no hay entrada de "
+  "datos desde el teclado. Los gestos y las máquinas de estado se ejecutan en la máquina virtual y no en "
+  "ensamblador, porque dependen de la cámara cuadro por cuadro. Finalmente, los módulos de conducción y de terapia "
+  "facial se validaron con escenarios simulados, fotos y pruebas del equipo; el siguiente paso es una evaluación "
+  "con participantes, con consentimiento informado y sin guardar video, como establece el marco legal.")
 
 titulo("Referencias", nueva_pagina=True)
 for r_txt in [
